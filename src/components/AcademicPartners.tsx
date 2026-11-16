@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { API_ENDPOINTS } from '../config/api';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface UniversityItem {
   id?: number;
@@ -74,6 +75,7 @@ interface AcademicPartnersProps {
 }
 
 export const AcademicPartners: React.FC<AcademicPartnersProps> = ({ onSelectUniversity }) => {
+  const { t } = useLanguage();
   const [universities, setUniversities] = useState<UniversityItem[]>(fallbackUniversities);
 
   useEffect(() => {
@@ -96,9 +98,7 @@ export const AcademicPartners: React.FC<AcademicPartnersProps> = ({ onSelectUniv
         }));
         setUniversities(mapped);
       })
-      .catch(() => {
-        // En cas d'erreur de connexion, les données de secours restent affichées
-      });
+      .catch(() => {});
 
     return () => {
       isMounted = false;
@@ -108,62 +108,64 @@ export const AcademicPartners: React.FC<AcademicPartnersProps> = ({ onSelectUniv
   return (
     <section id="partenaires" className="academic-prestigious-section reveal-section">
       <div className="academic-prestigious-inner">
-        {/* Titre et sous-titre */}
         <div className="academic-prestigious-header">
           <h2 className="academic-header-title reveal-left">
-            L'excellence académique brésilienne à votre portée
+            {t.academic.title}
           </h2>
-          <p className="academic-header-lead reveal-right">
-            Brasil·É prépare rigoureusement ses étudiants à réussir l’examen officiel du <strong>CELPE-Bras</strong>, le certificat d’État officiel qui ouvre les portes des facultés fédérales et d’État du Brésil sans passer par le concours local brésilien.
-          </p>
+          <p
+            className="academic-header-lead reveal-right"
+            dangerouslySetInnerHTML={{ __html: t.academic.leadHtml }}
+          />
         </div>
 
-        {/* Grille de cartes directes avec alternance gauche/droite automatique */}
         <div className="prestigious-unis-grid reveal-grid">
-          {universities.map((uni, idx) => (
-            <div key={uni.id ?? idx} className="prestigious-uni-card">
-              {/* Ligne haute : Monogramme + Localisation */}
-              <div className="uni-card-top-row">
-                <div
-                  className="uni-monogram-box"
-                  style={{ background: uni.badgeGradient }}
-                >
-                  <span>{uni.sigle}</span>
+          {universities.map((uni, idx) => {
+            const localized = t.academic.uniTranslations[uni.sigle];
+            const displayFullName = localized?.fullName || uni.fullName;
+            const displayHighlight = localized?.highlight || uni.highlight;
+
+            return (
+              <div key={uni.id ?? idx} className="prestigious-uni-card">
+                <div className="uni-card-top-row">
+                  <div
+                    className="uni-monogram-box"
+                    style={{ background: uni.badgeGradient }}
+                  >
+                    <span>{uni.sigle}</span>
+                  </div>
+
+                  <span className="uni-location-pill">
+                    <i className="fa-solid fa-location-dot"></i>
+                    <span>{uni.city}</span>
+                  </span>
                 </div>
 
-                <span className="uni-location-pill">
-                  <i className="fa-solid fa-location-dot"></i>
-                  <span>{uni.city}</span>
-                </span>
-              </div>
-
-              {/* Titre officiel de l'université */}
-              <div className="uni-card-body">
-                <h3 className="uni-card-name">{uni.name}</h3>
-                <div className="uni-card-fullname">{uni.fullName}</div>
-              </div>
-
-              {/* Ligne basse : Atout clé & Passerelle vers la page d'inscription dédiée */}
-              <div className="uni-card-bottom-bar">
-                <div className="uni-highlight-line">
-                  <i className="fa-solid fa-circle-check text-emerald-500"></i>
-                  <span>{uni.highlight}</span>
+                <div className="uni-card-body">
+                  <h3 className="uni-card-name">{uni.name}</h3>
+                  <div className="uni-card-fullname">{displayFullName}</div>
                 </div>
-                <button
-                  type="button"
-                  className="uni-arrow-action-btn"
-                  onClick={() =>
-                    onSelectUniversity
-                      ? onSelectUniversity(uni.sigle)
-                      : (window.location.href = `/inscription?universite=${encodeURIComponent(uni.sigle)}`)
-                  }
-                >
-                  <span>Admissibilité CELPE-Bras</span>
-                  <i className="fa-solid fa-arrow-right"></i>
-                </button>
+
+                <div className="uni-card-bottom-bar">
+                  <div className="uni-highlight-line">
+                    <i className="fa-solid fa-circle-check text-emerald-500"></i>
+                    <span>{displayHighlight}</span>
+                  </div>
+                  <button
+                    type="button"
+                    className="uni-arrow-action-btn"
+                    onClick={() =>
+                      onSelectUniversity
+                        ? onSelectUniversity(uni.sigle)
+                        : (window.location.href = `/inscription?universite=${encodeURIComponent(uni.sigle)}`)
+                    }
+                  >
+                    <span>{t.academic.ctaBtn}</span>
+                    <i className="fa-solid fa-arrow-right"></i>
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>

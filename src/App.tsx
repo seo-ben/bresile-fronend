@@ -1,5 +1,6 @@
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import './App.css';
+import { LanguageProvider } from './i18n/LanguageContext';
 import { useScrollReveal } from './hooks/useScrollReveal';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
@@ -78,14 +79,16 @@ export function HomePage() {
 
 export function App() {
   return (
-    <Routes>
-      <Route path="/" element={<HomePage />} />
-      <Route path="/inscription" element={<RegistrationPage />} />
-      <Route path="/connexion" element={<LoginPage />} />
-      <Route path="/portail" element={<StudentPortalPage />} />
-      <Route path="/espace-etudiant" element={<StudentPortalPage />} />
-      <Route path="*" element={<HomePage />} />
-    </Routes>
+    <LanguageProvider>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/inscription" element={<RegistrationPage />} />
+        <Route path="/connexion" element={<LoginPage />} />
+        <Route path="/portail" element={<StudentPortalPage />} />
+        <Route path="/espace-etudiant" element={<StudentPortalPage />} />
+        <Route path="*" element={<HomePage />} />
+      </Routes>
+    </LanguageProvider>
   );
 }
 

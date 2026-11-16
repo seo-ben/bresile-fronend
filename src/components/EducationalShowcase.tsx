@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { Program } from '../types';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface EducationalShowcaseProps {
   onSelectProgram: (program: Program) => void;
@@ -70,71 +71,17 @@ export const defaultPrograms: Program[] = [
   },
 ];
 
-interface SlideData {
-  titleLine1: string;
-  ampersand: string;
-  titleLine2: string;
-  subtitle: React.ReactNode;
-  bgUrl: string;
-  ctaText: string;
-  programIndex: number;
-  tabLabel: string;
-  icon: string;
-}
-
-const showcaseSlides: SlideData[] = [
-  {
-    titleLine1: 'Immersion Linguistique',
-    ampersand: '&',
-    titleLine2: 'Culturelle',
-    tabLabel: 'Immersion au Brésil',
-    icon: 'fa-solid fa-plane-departure',
-    subtitle: (
-      <>
-        Apprenez le portugais à <strong>Brasilia</strong> ou <strong>São Paulo</strong> en immersion totale, au contact direct d’enseignants natifs et de la vie locale.
-      </>
-    ),
-    bgUrl: '/images/showcase-immersion.jpg',
-    ctaText: "Choisir l'immersion au Brésil",
-    programIndex: 0,
-  },
-  {
-    titleLine1: 'Cours de Portugais',
-    ampersand: '&',
-    titleLine2: 'En Ligne Direct',
-    tabLabel: 'Cours en Ligne',
-    icon: 'fa-solid fa-laptop',
-    subtitle: (
-      <>
-        Validez les fondamentaux du portugais brésilien depuis chez vous en <strong>Afrique</strong> avec nos professeurs natifs en visioconférence directe.
-      </>
-    ),
-    bgUrl: '/images/showcase-online.jpg',
-    ctaText: 'Démarrer les cours en ligne',
-    programIndex: 1,
-  },
-  {
-    titleLine1: 'Diplôme CELPE-Bras',
-    ampersand: '&',
-    titleLine2: 'Cursus Universitaire',
-    tabLabel: 'Diplôme CELPE-Bras',
-    icon: 'fa-solid fa-graduation-cap',
-    subtitle: (
-      <>
-        Perfectionnement académique au <strong>Brésil</strong> pour réussir le diplôme d’État officiel et intégrer les <strong>universités partenaires</strong>.
-      </>
-    ),
-    bgUrl: '/images/showcase-university.jpg',
-    ctaText: 'Postuler au cursus universitaire',
-    programIndex: 2,
-  },
+const slideBackgrounds = [
+  '/images/showcase-immersion.jpg',
+  '/images/showcase-online.jpg',
+  '/images/showcase-university.jpg',
 ];
 
 export const EducationalShowcase: React.FC<EducationalShowcaseProps> = ({ onSelectProgram }) => {
+  const { t } = useLanguage();
   const trackRef = useRef<HTMLDivElement>(null);
   const [activeStep, setActiveStep] = useState<0 | 1 | 2>(0);
 
-  // Détection du scroll fluide sur grand écran et mobile
   useEffect(() => {
     const handleScroll = () => {
       if (!trackRef.current) return;
@@ -161,26 +108,21 @@ export const EducationalShowcase: React.FC<EducationalShowcaseProps> = ({ onSele
 
   return (
     <div id="formations" className="educational-editorial-section">
-      {/* ====================================================================
-          SESSION 2 : SCROLL-DRIVEN BANNER PANORAMIQUE HAUTE FIDÉLITÉ
-          ==================================================================== */}
       <div ref={trackRef} className="scroll-showcase-track">
         <div className="scroll-showcase-sticky">
-          {/* Images d'arrière-plan en fondu enchaîné (1: Immersion, 2: Online, 3: University) */}
           <div className="showcase-bg-stack" aria-hidden="true">
-            {showcaseSlides.map((slide, idx) => (
+            {slideBackgrounds.map((bgUrl, idx) => (
               <div
                 key={idx}
                 className={`showcase-bg-layer ${activeStep === idx ? 'is-active' : ''}`}
-                style={{ backgroundImage: `url(${slide.bgUrl})` }}
+                style={{ backgroundImage: `url(${bgUrl})` }}
               />
             ))}
             <div className="showcase-bg-scrim-light" />
           </div>
 
-          {/* Contenu textuel pour chaque slide */}
           <div className="showcase-slides-container">
-            {showcaseSlides.map((slide, idx) => (
+            {t.showcase.slides.map((slide, idx) => (
               <div
                 key={idx}
                 className={`showcase-slide-wrapper ${activeStep === idx ? 'is-active' : ''}`}
@@ -193,9 +135,10 @@ export const EducationalShowcase: React.FC<EducationalShowcaseProps> = ({ onSele
                     </span>
                   </h2>
 
-                  <p className="showcase-lead-description">
-                    {slide.subtitle}
-                  </p>
+                  <p
+                    className="showcase-lead-description"
+                    dangerouslySetInnerHTML={{ __html: slide.subtitleHtml }}
+                  />
 
                   <div className="showcase-stroke-container" aria-hidden="true">
                     <svg
@@ -211,12 +154,11 @@ export const EducationalShowcase: React.FC<EducationalShowcaseProps> = ({ onSele
                     </svg>
                   </div>
 
-                  {/* Bouton d'action pour chaque formation */}
                   <div className="showcase-action-row">
                     <button
                       type="button"
                       className="btn-showcase-action"
-                      onClick={() => onSelectProgram?.(defaultPrograms[slide.programIndex])}
+                      onClick={() => onSelectProgram?.(defaultPrograms[idx])}
                     >
                       <span>{slide.ctaText}</span>
                       <i className="fa-solid fa-arrow-right"></i>

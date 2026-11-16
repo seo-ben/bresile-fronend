@@ -1,34 +1,32 @@
 import React from 'react';
+import { useLanguage } from '../i18n/LanguageContext';
 
-const points = [
-  { icon: 'fa-file-signature', text: 'Clause signée dès l’inscription' },
-  { icon: 'fa-building-columns', text: 'Virement sous 14 jours ouvrés' },
-  { icon: 'fa-shield-halved', text: 'Dossiers officiels conformes' },
-];
+const pointIcons = ['fa-file-signature', 'fa-building-columns', 'fa-shield-halved'];
 
 export const TrustGuarantee: React.FC = () => {
+  const { t } = useLanguage();
+
   return (
     <section id="garantie" className="guarantee-flat reveal-section">
       <div className="guarantee-flat-inner">
         <div className="guarantee-flat-figure reveal-left">
           <span className="guarantee-flat-number">85%</span>
-          <span className="guarantee-flat-caption">remboursés si le visa est refusé</span>
+          <span className="guarantee-flat-caption">{t.guarantee.caption}</span>
         </div>
 
         <div className="guarantee-flat-copy reveal-right">
           <h3 className="guarantee-flat-title">
-            La seule école qui sécurise financièrement votre projet d’études
+            {t.guarantee.title}
           </h3>
           <p className="guarantee-flat-text">
-            Refus de visa par le consulat ? 85 % des montants réglés vous sont restitués.
-            C’est écrit dans votre contrat.
+            {t.guarantee.text}
           </p>
 
           <ul className="guarantee-flat-points">
-            {points.map((p) => (
-              <li key={p.text}>
-                <i className={`fa-solid ${p.icon}`}></i>
-                <span>{p.text}</span>
+            {t.guarantee.points.map((text, idx) => (
+              <li key={idx}>
+                <i className={`fa-solid ${pointIcons[idx]}`}></i>
+                <span>{text}</span>
               </li>
             ))}
           </ul>

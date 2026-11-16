@@ -1,40 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
-
-interface TimelineStep {
-  number: string;
-  title: string;
-  description: string;
-  tags: string;
-}
-
-const timelineSteps: TimelineStep[] = [
-  {
-    number: '01',
-    title: 'Inscription & Choix du Cursus',
-    description: 'Choix de votre formation (présentiel ou en ligne) et validation de votre dossier.',
-    tags: 'En Ligne • Gratuit & Immédiat',
-  },
-  {
-    number: '02',
-    title: 'Attestation Officielle sous 48h',
-    description: 'Certificat de scolarité certifié conforme délivré par le secrétariat à Brasília.',
-    tags: 'Normes MEC / INEP • Conforme Consulat',
-  },
-  {
-    number: '03',
-    title: 'Dépôt Visa VITEM IV & Garantie 85%',
-    description: 'Dépôt consulaire sécurisé avec clause contractuelle de remboursement en cas de refus.',
-    tags: 'Garantie 85% • Assistance Visa',
-  },
-  {
-    number: '04',
-    title: 'Arrivée, Logement & Rentrée au Brésil',
-    description: 'Accueil à l’aéroport à Brasília ou São Paulo, CPF, démarches et début des cours.',
-    tags: 'Brasília / SP • Accueil Garanti',
-  },
-];
+import { useLanguage } from '../i18n/LanguageContext';
 
 export const MobilityTimeline: React.FC = () => {
+  const { t } = useLanguage();
   const trackRef = useRef<HTMLDivElement>(null);
   const [activeStep, setActiveStep] = useState<0 | 1 | 2 | 3>(0);
 
@@ -45,7 +13,6 @@ export const MobilityTimeline: React.FC = () => {
       const trackHeight = trackRef.current.offsetHeight - window.innerHeight;
       if (trackHeight <= 0) return;
 
-      // Progression du scroll de 0 à 1 dans la piste
       const progress = Math.min(Math.max(-rect.top / trackHeight, 0), 1);
 
       if (progress < 0.18) {
@@ -70,16 +37,15 @@ export const MobilityTimeline: React.FC = () => {
       <div className="stacking-timeline-sticky">
         <div className="stacking-timeline-header">
           <h2 className="timeline-main-title reveal-left">
-            De votre pays d’origine jusqu’à votre première rentrée au Brésil
+            {t.timeline.title}
           </h2>
           <p className="timeline-lead-desc reveal-right">
-            Un processus d'admission et de mobilité clair, rapide et sécurisé en 4 étapes.
+            {t.timeline.subtitle}
           </p>
         </div>
 
-        {/* Espace scénique où les cartes s'empilent au fil du scroll sur desktop et mobile */}
         <div className="sleek-deck-stage">
-          {timelineSteps.map((step, idx) => {
+          {t.timeline.steps.map((step, idx) => {
             const isVisible = activeStep >= idx;
             return (
               <div

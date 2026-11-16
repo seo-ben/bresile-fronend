@@ -4576,3 +4576,107 @@ body {
     transition: none !important;
   }
 }
+
+/* ==========================================================================
+   SÉLECTEUR DE LANGUE MULTILINGUE (FR / EN / PT-BR)
+   ========================================================================== */
+.lang-switcher-pill {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 9999px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.lang-btn-item {
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.28rem 0.55rem;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  letter-spacing: 0.03em;
+}
+
+.lang-btn-item:hover {
+  color: #ffffff;
+}
+
+.lang-btn-item.is-active {
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.site-header.is-scrolled .lang-switcher-pill,
+.lang-switcher-pill.is-light {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.site-header.is-scrolled .lang-btn-item,
+.lang-switcher-pill.is-light .lang-btn-item {
+  color: #475569;
+}
+
+.site-header.is-scrolled .lang-btn-item.is-active,
+.lang-switcher-pill.is-light .lang-btn-item.is-active {
+  background: #0f172a;
+  color: #ffffff;
+}
+
+.mobile-lang-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.3rem 0.55rem;
+  border-radius: 8px;
+  cursor: pointer;
+  outline: none;
+}
+
+.site-header.is-scrolled .mobile-lang-select {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+.drawer-lang-bar {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid #f1f5f9;
+  background: #f8fafc;
+}
+
+.drawer-lang-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.5rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #334155;
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.drawer-lang-btn.is-active {
+  background: #0f172a;
+  border-color: #0f172a;
+  color: #ffffff;
+}

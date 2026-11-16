@@ -7,6 +7,7 @@ import {
   CheckCircle,
 } from 'lucide-react';
 import { API_ENDPOINTS } from '../config/api';
+import { useLanguage, LANGUAGE_LABELS, type Language } from '../i18n/LanguageContext';
 
 interface PartnerOption {
   sigle: string;
@@ -92,6 +93,8 @@ const dialCodeList = [
 export const RegistrationPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { lang, setLang, t } = useLanguage();
+  const languages: Language[] = ['fr', 'en', 'pt'];
 
   const preselectedUniversity = searchParams.get('universite') || '';
   const preselectedLevel = searchParams.get('niveau') || 'Niveau A1 — Débutant';
@@ -247,14 +250,29 @@ export const RegistrationPage: React.FC = () => {
       {/* Centered Glassmorphism Card */}
       <main className="glass-auth-main">
         <div className="glass-card glass-card-registration">
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.5rem' }}>
+            <div className="lang-switcher-pill is-light">
+              {languages.map((code) => (
+                <button
+                  key={code}
+                  type="button"
+                  className={`lang-btn-item ${lang === code ? 'is-active' : ''}`}
+                  onClick={() => setLang(code)}
+                >
+                  {LANGUAGE_LABELS[code].short}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {isSuccess ? (
             <div className="glass-success-view">
               <div className="glass-icon-badge success">
                 <CheckCircle size={36} className="text-emerald-600" />
               </div>
-              <h1 className="glass-card-title">Inscription Réussie !</h1>
+              <h1 className="glass-card-title">{t.auth.regSuccessTitle}</h1>
               <p className="glass-card-subtitle">
-                Félicitations <strong>{firstName} {lastName}</strong> ! Votre dossier pour le <strong>{desiredLevel}</strong> ({studyMode}) a bien été pris en compte.
+                <strong>{firstName} {lastName}</strong> — <strong>{desiredLevel}</strong> ({studyMode})
               </p>
               <div className="glass-action-buttons">
                 <button
@@ -262,23 +280,23 @@ export const RegistrationPage: React.FC = () => {
                   className="glass-btn-primary"
                   onClick={() => navigate('/connexion')}
                 >
-                  Accéder à mon espace étudiant
+                  {t.auth.accessPortal}
                 </button>
                 <button
                   type="button"
                   className="glass-btn-secondary"
                   onClick={() => navigate('/')}
                 >
-                  Retourner à l'accueil
+                  {t.auth.backHome}
                 </button>
               </div>
             </div>
           ) : (
             <div className="glass-form-inner">
               {/* Title & Subtitle */}
-              <h1 className="glass-card-title">Commencer mon inscription</h1>
+              <h1 className="glass-card-title">{t.auth.regTitle}</h1>
               <p className="glass-card-subtitle">
-                Remplissez vos informations pour commencer vos démarches d'études.
+                {t.auth.regSubtitle}
               </p>
 
               {errorMsg && <div className="glass-error-badge">{errorMsg}</div>}
@@ -288,7 +306,7 @@ export const RegistrationPage: React.FC = () => {
                 {/* Row 1: Prénom & Nom */}
                 <div className="glass-form-row">
                   <div className="glass-field-group">
-                    <label className="glass-label">Prénom *</label>
+                    <label className="glass-label">{t.auth.firstName}</label>
                     <input
                       type="text"
                       required
@@ -300,7 +318,7 @@ export const RegistrationPage: React.FC = () => {
                   </div>
 
                   <div className="glass-field-group">
-                    <label className="glass-label">Nom de famille *</label>
+                    <label className="glass-label">{t.auth.lastName}</label>
                     <input
                       type="text"
                       required
@@ -315,7 +333,7 @@ export const RegistrationPage: React.FC = () => {
                 {/* Row 2: Email & Téléphone/WhatsApp */}
                 <div className="glass-form-row">
                   <div className="glass-field-group">
-                    <label className="glass-label">Adresse e-mail *</label>
+                    <label className="glass-label">{t.auth.emailLabel} *</label>
                     <input
                       type="email"
                       required
@@ -327,7 +345,7 @@ export const RegistrationPage: React.FC = () => {
                   </div>
 
                   <div className="glass-field-group">
-                    <label className="glass-label">Téléphone / WhatsApp *</label>
+                    <label className="glass-label">{t.auth.phone}</label>
                     <div className="glass-phone-combined">
                       <select
                         className="glass-input glass-select glass-dial-select"
@@ -356,7 +374,7 @@ export const RegistrationPage: React.FC = () => {
                 {/* Row 3: Niveau CECRL & Modalité */}
                 <div className="glass-form-row">
                   <div className="glass-field-group">
-                    <label className="glass-label">Niveau CECRL visé *</label>
+                    <label className="glass-label">{t.auth.levelTarget}</label>
                     <select
                       className="glass-input glass-select"
                       value={desiredLevel}
@@ -371,14 +389,14 @@ export const RegistrationPage: React.FC = () => {
                   </div>
 
                   <div className="glass-field-group">
-                    <label className="glass-label">Modalité d'études *</label>
+                    <label className="glass-label">{t.auth.studyMode}</label>
                     <select
                       className="glass-input glass-select"
                       value={studyMode}
                       onChange={(e) => setStudyMode(e.target.value)}
                     >
-                      <option value="Présentiel au Brésil">Présentiel au Brésil (Visa VITEM IV)</option>
-                      <option value="100% En Ligne">100% En Ligne (À distance)</option>
+                      <option value="Présentiel au Brésil">{t.auth.modeInPerson}</option>
+                      <option value="100% En Ligne">{t.auth.modeOnline}</option>
                     </select>
                   </div>
                 </div>
@@ -386,7 +404,7 @@ export const RegistrationPage: React.FC = () => {
                 {/* Row 4: Ville d'accueil & Université cible */}
                 <div className="glass-form-row">
                   <div className="glass-field-group">
-                    <label className="glass-label">Ville d'accueil au Brésil *</label>
+                    <label className="glass-label">{t.auth.hostCity}</label>
                     <select
                       className="glass-input glass-select"
                       value={cityChoice}
@@ -402,19 +420,19 @@ export const RegistrationPage: React.FC = () => {
                   </div>
 
                   <div className="glass-field-group">
-                    <label className="glass-label">Université cible (Optionnel)</label>
+                    <label className="glass-label">{t.auth.targetUni}</label>
                     <select
                       className="glass-input glass-select"
                       value={targetUniversity}
                       onChange={(e) => setTargetUniversity(e.target.value)}
                     >
-                      <option value="">-- Choisir plus tard --</option>
+                      <option value="">{t.auth.chooseLater}</option>
                       {universities.map((uni) => (
                         <option key={uni.sigle} value={uni.sigle}>
                           {uni.sigle} — {uni.name} ({uni.city})
                         </option>
                       ))}
-                      <option value="Autre faculté">Autre université brésilienne</option>
+                      <option value="Autre faculté">{t.auth.otherUni}</option>
                     </select>
                   </div>
                 </div>
@@ -422,7 +440,7 @@ export const RegistrationPage: React.FC = () => {
                 {/* Row 5: Pays de résidence & Mot de passe */}
                 <div className="glass-form-row">
                   <div className="glass-field-group">
-                    <label className="glass-label">Pays de résidence actuel *</label>
+                    <label className="glass-label">{t.auth.residenceCountry}</label>
                     <select
                       className="glass-input glass-select"
                       value={country}
@@ -450,12 +468,12 @@ export const RegistrationPage: React.FC = () => {
                   </div>
 
                   <div className="glass-field-group">
-                    <label className="glass-label">Mot de passe pour mon compte *</label>
+                    <label className="glass-label">{t.auth.accountPassword}</label>
                     <div className="glass-password-wrap">
                       <input
                         type={showPassword ? 'text' : 'password'}
                         required
-                        placeholder="Min. 8 caractères"
+                        placeholder={t.auth.minChars}
                         className="glass-input glass-password-input"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
@@ -472,20 +490,20 @@ export const RegistrationPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Submit Button (Dark sleek button like screenshot) */}
+                {/* Submit Button */}
                 <button
                   type="submit"
                   className="glass-btn-primary"
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? 'Validation en cours...' : 'Valider mon inscription'}
+                  {isSubmitting ? t.auth.submittingReg : t.auth.submitReg}
                 </button>
 
                 {/* Footer Link to Student Login */}
                 <div className="glass-footer-link-row">
-                  <span>Vous avez déjà un compte ?</span>{' '}
+                  <span>{t.auth.alreadyAccount}</span>{' '}
                   <Link to="/connexion" className="glass-text-link">
-                    Se connecter
+                    {t.auth.loginBtn}
                   </Link>
                 </div>
               </form>

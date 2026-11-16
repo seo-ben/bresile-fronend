@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import './RegistrationPage.css';
 import { API_ENDPOINTS } from '../config/api';
+import { useLanguage, LANGUAGE_LABELS, type Language } from '../i18n/LanguageContext';
 import {
   Eye,
   EyeOff,
@@ -10,6 +11,8 @@ import {
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const { lang, setLang, t } = useLanguage();
+  const languages: Language[] = ['fr', 'en', 'pt'];
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -88,14 +91,29 @@ export const LoginPage: React.FC = () => {
       {/* Main Centered Frosted Glass Card */}
       <main className="glass-auth-main">
         <div className="glass-card glass-card-login">
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.75rem' }}>
+            <div className="lang-switcher-pill is-light">
+              {languages.map((code) => (
+                <button
+                  key={code}
+                  type="button"
+                  className={`lang-btn-item ${lang === code ? 'is-active' : ''}`}
+                  onClick={() => setLang(code)}
+                >
+                  {LANGUAGE_LABELS[code].short}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {isSuccess ? (
             <div className="glass-success-view">
               <div className="glass-icon-badge success">
                 <CheckCircle size={36} className="text-emerald-600" />
               </div>
-              <h1 className="glass-card-title">Bon retour, {studentName} !</h1>
+              <h1 className="glass-card-title">{t.auth.welcomeBack}, {studentName} !</h1>
               <p className="glass-card-subtitle">
-                Votre session est ouverte. Vous pouvez accéder à votre planning et vos attestations.
+                {t.auth.sessionOpen}
               </p>
               <div className="glass-action-buttons">
                 <button
@@ -103,16 +121,16 @@ export const LoginPage: React.FC = () => {
                   className="glass-btn-primary"
                   onClick={() => navigate('/portail')}
                 >
-                  Accéder à mon espace
+                  {t.auth.accessPortal}
                 </button>
               </div>
             </div>
           ) : (
             <div className="glass-form-inner">
               {/* Title & Subtitle */}
-              <h1 className="glass-card-title">Connexion</h1>
+              <h1 className="glass-card-title">{t.auth.loginTitle}</h1>
               <p className="glass-card-subtitle">
-                Entrez vos identifiants pour accéder à votre espace étudiant.
+                {t.auth.loginSubtitle}
               </p>
 
               {errorMsg && <div className="glass-error-badge">{errorMsg}</div>}
@@ -120,7 +138,7 @@ export const LoginPage: React.FC = () => {
               {/* Login Form */}
               <form onSubmit={handleSubmit} className="glass-actual-form">
                 <div className="glass-field-group">
-                  <label className="glass-label">Adresse e-mail</label>
+                  <label className="glass-label">{t.auth.emailLabel}</label>
                   <input
                     type="email"
                     required
@@ -132,12 +150,12 @@ export const LoginPage: React.FC = () => {
                 </div>
 
                 <div className="glass-field-group">
-                  <label className="glass-label">Mot de passe</label>
+                  <label className="glass-label">{t.auth.passwordLabel}</label>
                   <div className="glass-password-wrap">
                     <input
                       type={showPassword ? 'text' : 'password'}
                       required
-                      placeholder="Votre mot de passe"
+                      placeholder={t.auth.passwordPlaceholder}
                       className="glass-input glass-password-input"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
@@ -162,7 +180,7 @@ export const LoginPage: React.FC = () => {
                       onChange={(e) => setRememberMe(e.target.checked)}
                       className="glass-checkbox"
                     />
-                    <span>Se souvenir de moi</span>
+                    <span>{t.auth.rememberMe}</span>
                   </label>
 
                   <a
@@ -170,27 +188,27 @@ export const LoginPage: React.FC = () => {
                     className="glass-forgot-link"
                     onClick={(e) => {
                       e.preventDefault();
-                      alert("Contactez le secrétariat pédagogique Brasil·É pour réinitialiser vos accès.");
+                      alert(t.auth.forgotAlert);
                     }}
                   >
-                    Mot de passe oublié ?
+                    {t.auth.forgotPassword}
                   </a>
                 </div>
 
-                {/* Dark submit button like in screenshot */}
+                {/* Dark submit button */}
                 <button
                   type="submit"
                   className="glass-btn-primary"
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? 'Connexion en cours...' : 'Se connecter'}
+                  {isSubmitting ? t.auth.loggingIn : t.auth.loginBtn}
                 </button>
 
                 {/* Footer link to registration */}
                 <div className="glass-footer-link-row">
-                  <span>Vous n'avez pas encore de compte ?</span>{' '}
+                  <span>{t.auth.noAccount}</span>{' '}
                   <Link to="/inscription" className="glass-text-link">
-                    Créer un compte
+                    {t.auth.createAccount}
                   </Link>
                 </div>
               </form>

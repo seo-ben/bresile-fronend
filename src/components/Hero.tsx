@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface HeroProps {
   onSearch: (query: string) => void;
@@ -6,6 +7,7 @@ interface HeroProps {
 }
 
 export const Hero: React.FC<HeroProps> = ({ onSearch, onTagClick }) => {
+  const { t } = useLanguage();
   const [query, setQuery] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -13,17 +15,17 @@ export const Hero: React.FC<HeroProps> = ({ onSearch, onTagClick }) => {
     onSearch(query);
   };
 
-  const categories = [
-    { label: 'Niveau A1 (En Ligne)', shortLabel: 'A1 En Ligne', icon: <i className="fa-solid fa-globe"></i>, q: 'A1-ligne' },
-    { label: 'Niveau A1 (Au Brésil)', shortLabel: 'A1 au Brésil', icon: <i className="fa-solid fa-plane-departure"></i>, q: 'A1-bresil' },
-    { label: 'Niveau A2 (Au Brésil)', shortLabel: 'A2 au Brésil', icon: <i className="fa-solid fa-graduation-cap"></i>, q: 'A2-bresil' },
-    { label: 'Diplôme CELPE-Bras', shortLabel: 'CELPE-Bras', icon: <i className="fa-solid fa-award"></i>, q: 'celpe-bras' },
-    { label: 'Campus Brasília', shortLabel: 'Brasília (DF)', icon: <i className="fa-solid fa-building-columns"></i>, q: 'brasilia' },
+  const categoryIcons = [
+    <i className="fa-solid fa-globe"></i>,
+    <i className="fa-solid fa-plane-departure"></i>,
+    <i className="fa-solid fa-graduation-cap"></i>,
+    <i className="fa-solid fa-award"></i>,
+    <i className="fa-solid fa-building-columns"></i>,
   ];
 
   return (
     <section className="hero-wrapper reveal-section">
-      {/* L'ellipse concentrique exacte de Codeur.com pointée par l'utilisateur */}
+      {/* L'ellipse concentrique exacte de Codeur.com */}
       <img
         src="/home-elipse.svg"
         alt=""
@@ -34,9 +36,9 @@ export const Hero: React.FC<HeroProps> = ({ onSearch, onTagClick }) => {
       <div className="hero-inner">
         {/* Titre Hero Épuré */}
         <h1 className="hero-title reveal-left">
-          La référence pour apprendre le portugais et la culture{' '}
+          {t.hero.titleBefore}
           <span className="underline-wrapper">
-            brésilienne
+            {t.hero.titleHighlight}
             <svg
               className="drawn-stroke"
               viewBox="0 0 240 24"
@@ -63,26 +65,26 @@ export const Hero: React.FC<HeroProps> = ({ onSearch, onTagClick }) => {
               className="search-input-field"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Quel est votre projet ? (Niveau, visa...)"
+              placeholder={t.hero.searchPlaceholder}
             />
           </div>
           <button type="submit" className="btn-search-orange">
-            <span className="btn-search-text-full">Choisir ma formation</span>
-            <span className="btn-search-text-short">Choisir</span>
+            <span className="btn-search-text-full">{t.hero.searchBtnFull}</span>
+            <span className="btn-search-text-short">{t.hero.searchBtnShort}</span>
             <i className="fa-solid fa-arrow-right"></i>
           </button>
         </form>
 
-        {/* Pills Catégories (Défilement fluide horizontal sur mobile) */}
+        {/* Pills Catégories */}
         <div className="category-pills-row reveal-left reveal-delay-2">
-          {categories.map((cat, idx) => (
+          {t.hero.categories.map((cat, idx) => (
             <button
               key={idx}
               type="button"
               className="cat-pill"
               onClick={() => onTagClick(cat.q)}
             >
-              <span>{cat.icon}</span>
+              <span>{categoryIcons[idx]}</span>
               <span className="cat-pill-full">{cat.label}</span>
               <span className="cat-pill-short">{cat.shortLabel}</span>
             </button>
@@ -91,8 +93,8 @@ export const Hero: React.FC<HeroProps> = ({ onSearch, onTagClick }) => {
       </div>
 
       {/* Indicateur de défilement vers la session des formations */}
-      <a href="#formations" className="hero-scroll-indicator" aria-label="Découvrir les formations">
-        <span>Découvrir nos cursus</span>
+      <a href="#formations" className="hero-scroll-indicator" aria-label={t.hero.scrollIndicator}>
+        <span>{t.hero.scrollIndicator}</span>
         <i className="fa-solid fa-chevron-down hero-scroll-icon"></i>
       </a>
     </section>

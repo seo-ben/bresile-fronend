@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useLanguage, LANGUAGE_LABELS, type Language } from '../i18n/LanguageContext';
 
 interface NavbarProps {
   onOpenRegister: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister }) => {
+  const { lang, setLang, t } = useLanguage();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -24,10 +26,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister }) => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Fermer le menu mobile lors d'un clic sur un lien
   const handleNavClick = () => {
     setIsMobileMenuOpen(false);
   };
+
+  const languages: Language[] = ['fr', 'en', 'pt'];
 
   return (
     <>
@@ -42,29 +45,58 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister }) => {
               <span className="brand-name">
                 Brasil<span className="accent">·É</span>
               </span>
-              <span className="brand-tagline">ÉCOLE DE PORTUGAIS &amp; MOBILITÉ AU BRÉSIL</span>
+              <span className="brand-tagline">{t.nav.tagline}</span>
             </div>
           </Link>
 
           {/* Menu Desktop */}
           <div className="header-right header-desktop-nav">
-            <a href="#formations" className="header-link">Nos formations</a>
-            <a href="#partenaires" className="header-link">Universités</a>
-            <Link to="/connexion" className="header-link">Connexion</Link>
+            <a href="#formations" className="header-link">{t.nav.programs}</a>
+            <a href="#partenaires" className="header-link">{t.nav.universities}</a>
+            <Link to="/connexion" className="header-link">{t.nav.login}</Link>
+
+            {/* Sélecteur de langue FR / EN / PT */}
+            <div className="lang-switcher-pill" role="group" aria-label="Langue">
+              {languages.map((code) => (
+                <button
+                  key={code}
+                  type="button"
+                  className={`lang-btn-item ${lang === code ? 'is-active' : ''}`}
+                  onClick={() => setLang(code)}
+                  title={LANGUAGE_LABELS[code].label}
+                >
+                  {LANGUAGE_LABELS[code].short}
+                </button>
+              ))}
+            </div>
 
             <button
               type="button"
               className="btn-orange-pill"
               onClick={onOpenRegister}
             >
-              Commencer mon inscription
+              {t.nav.registerCta}
             </button>
           </div>
 
-          {/* Actions Navbar Mobile (Complète & Haut de Gamme) */}
+          {/* Actions Navbar Mobile */}
           <div className="header-mobile-actions">
+            {/* Sélecteur compact mobile */}
+            <select
+              className="mobile-lang-select"
+              value={lang}
+              onChange={(e) => setLang(e.target.value as Language)}
+              aria-label="Langue"
+            >
+              {languages.map((code) => (
+                <option key={code} value={code}>
+                  {LANGUAGE_LABELS[code].short}
+                </option>
+              ))}
+            </select>
+
             <Link to="/connexion" className="mobile-nav-link-connexion">
-              Connexion
+              {t.nav.login}
             </Link>
 
             <button
@@ -72,7 +104,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister }) => {
               className="btn-mobile-inscription"
               onClick={onOpenRegister}
             >
-              S'inscrire
+              {t.nav.registerShort}
             </button>
 
             <button
@@ -100,7 +132,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister }) => {
                   <span className="brand-name">
                     Brasil<span className="accent">·É</span>
                   </span>
-                  <span className="brand-tagline">ÉCOLE DE PORTUGAIS &amp; MOBILITÉ AU BRÉSIL</span>
+                  <span className="brand-tagline">{t.nav.tagline}</span>
                 </div>
               </div>
               <button
@@ -113,34 +145,49 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister }) => {
               </button>
             </div>
 
+            {/* Choix de la langue dans le drawer */}
+            <div className="drawer-lang-bar">
+              {languages.map((code) => (
+                <button
+                  key={code}
+                  type="button"
+                  className={`drawer-lang-btn ${lang === code ? 'is-active' : ''}`}
+                  onClick={() => setLang(code)}
+                >
+                  <span>{LANGUAGE_LABELS[code].flag}</span>
+                  <span>{LANGUAGE_LABELS[code].label}</span>
+                </button>
+              ))}
+            </div>
+
             <nav className="mobile-drawer-links">
               <a href="#formations" className="drawer-link-item" onClick={handleNavClick}>
                 <i className="fa-solid fa-graduation-cap"></i>
-                <span>Nos Formations (A1, A2, CELPE-Bras)</span>
+                <span>{t.nav.drawerPrograms}</span>
               </a>
               <a href="#timeline" className="drawer-link-item" onClick={handleNavClick}>
                 <i className="fa-solid fa-route"></i>
-                <span>Processus d'admission en 4 étapes</span>
+                <span>{t.nav.drawerTimeline}</span>
               </a>
               <a href="#partenaires" className="drawer-link-item" onClick={handleNavClick}>
                 <i className="fa-solid fa-building-columns"></i>
-                <span>Universités partenaires (USP, UnB...)</span>
+                <span>{t.nav.drawerUniversities}</span>
               </a>
               <a href="#garantie" className="drawer-link-item" onClick={handleNavClick}>
                 <i className="fa-solid fa-shield-halved"></i>
-                <span>Garantie de Remboursement (85%)</span>
+                <span>{t.nav.drawerGuarantee}</span>
               </a>
               <a href="#faq" className="drawer-link-item" onClick={handleNavClick}>
                 <i className="fa-solid fa-circle-question"></i>
-                <span>Questions fréquentes (FAQ)</span>
+                <span>{t.nav.drawerFaq}</span>
               </a>
               <Link to="/portail" className="drawer-link-item link-highlight" onClick={handleNavClick}>
                 <i className="fa-solid fa-id-card"></i>
-                <span>Espace Étudiant</span>
+                <span>{t.nav.drawerPortal}</span>
               </Link>
               <Link to="/connexion" className="drawer-link-item" onClick={handleNavClick}>
                 <i className="fa-solid fa-arrow-right-to-bracket"></i>
-                <span>Connexion</span>
+                <span>{t.nav.drawerLogin}</span>
               </Link>
             </nav>
 
@@ -153,7 +200,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister }) => {
                   onOpenRegister();
                 }}
               >
-                <span>Commencer mon inscription</span>
+                <span>{t.nav.registerCta}</span>
                 <i className="fa-solid fa-arrow-right"></i>
               </button>
             </div>
