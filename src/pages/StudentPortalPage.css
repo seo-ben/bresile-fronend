@@ -1,0 +1,838 @@
+/* ==========================================================================
+   DASHBOARD ÉTUDIANT BRASIL·É — DESIGN OFFICIEL (CONFORME CAHIER DES CHARGES)
+   ========================================================================== */
+
+:root {
+  --portal-bg: #f8fafc;
+  --portal-sidebar: #0c1e3d;
+  --portal-sidebar-hover: #162c54;
+  --portal-sidebar-active: #1e3a6e;
+  --portal-card: #ffffff;
+  --portal-border: #e2e8f0;
+  --portal-text-main: #0f172a;
+  --portal-text-muted: #64748b;
+  --portal-green: #00a859;
+  --portal-green-light: #ecfdf5;
+  --portal-blue: #1877f2;
+  --portal-amber: #f59e0b;
+}
+
+.portal-layout-direct {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--portal-bg);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: var(--portal-text-main);
+}
+
+/* ==========================================================================
+   1. SIDEBAR ÉPURÉE (265px) — LES 8 RUBRIQUES OFFICIELLES DU DOSSIER
+   ========================================================================== */
+.portal-sidebar-direct {
+  width: 265px;
+  background-color: var(--portal-sidebar);
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  z-index: 40;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+.portal-sidebar-header {
+  padding: 1.35rem 1.25rem 1.15rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.portal-brand-link {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: #ffffff;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  letter-spacing: -0.02em;
+}
+
+.portal-brand-link .dot {
+  color: var(--portal-green);
+}
+
+.portal-brand-badge {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+}
+
+.portal-sidebar-menu {
+  flex: 1;
+  padding: 1rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  overflow-y: auto;
+}
+
+.portal-sidebar-menu::-webkit-scrollbar {
+  width: 4px;
+}
+.portal-sidebar-menu::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+
+.portal-menu-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  color: #94a3b8;
+  font-size: 0.84rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+}
+
+.portal-menu-link i {
+  font-size: 0.95rem;
+  width: 18px;
+  text-align: center;
+}
+
+.portal-menu-link:hover {
+  background-color: var(--portal-sidebar-hover);
+  color: #ffffff;
+}
+
+.portal-menu-link.active {
+  background-color: var(--portal-sidebar-active);
+  color: #ffffff;
+  font-weight: 750;
+  border-radius: 8px;
+  border: none;
+}
+
+.portal-menu-link.active i {
+  color: var(--portal-green);
+}
+
+.portal-sidebar-bottom {
+  padding: 0.9rem 1.1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.portal-user-brief {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.portal-user-brief-info {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.portal-avatar-letter {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--portal-blue);
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 0.82rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.portal-user-brief-text {
+  min-width: 0;
+}
+
+.portal-user-brief-text .name {
+  font-size: 0.82rem;
+  font-weight: 750;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.portal-user-brief-text .ref {
+  font-size: 0.68rem;
+  color: #94a3b8;
+}
+
+.portal-logout-action {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.35rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.portal-logout-action:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* ==========================================================================
+   2. CONTENU DU DASHBOARD
+   ========================================================================== */
+.portal-content-direct {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Topbar */
+.portal-topbar-direct {
+  background: #ffffff;
+  height: 60px;
+  border-bottom: 1px solid var(--portal-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+
+.portal-topbar-title {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.portal-topbar-title h1 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--portal-text-main);
+  margin: 0;
+}
+
+.portal-status-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--portal-green-light);
+  color: var(--portal-green);
+  border: 1px solid #bbf7d0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.18rem 0.6rem;
+  border-radius: 9999px;
+}
+
+.portal-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.portal-site-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #475569;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 0.4rem 0.8rem;
+  border: 1px solid var(--portal-border);
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.portal-site-link:hover {
+  background: #f1f5f9;
+  color: var(--portal-sidebar);
+}
+
+/* Corps de page */
+.portal-page-body {
+  padding: 1.75rem 2rem;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* ==========================================================================
+   BANNIÈRE PROCHAINE ACTION OBLIGATOIRE (SECTION 14.1 DU CAHIER DES CHARGES)
+   ========================================================================== */
+.portal-action-banner {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 10px;
+  padding: 1.15rem 1.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+}
+
+.portal-action-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+}
+
+.portal-action-icon {
+  color: #f59e0b;
+  font-size: 1.35rem;
+  margin-top: 0.1rem;
+}
+
+.portal-action-title {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #92400e;
+  margin-bottom: 0.2rem;
+}
+
+.portal-action-desc {
+  font-size: 0.82rem;
+  color: #78350f;
+  line-height: 1.4;
+}
+
+.portal-action-btn {
+  background: #f59e0b;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.55rem 1rem;
+  font-size: 0.82rem;
+  font-weight: 750;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease;
+}
+
+.portal-action-btn:hover {
+  background: #d97706;
+}
+
+/* ==========================================================================
+   3 CARTES DIRECTES (RÉSUMÉ)
+   ========================================================================== */
+.portal-summary-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.15rem;
+}
+
+.portal-summary-card {
+  background: #ffffff;
+  border: 1px solid var(--portal-border);
+  border-radius: 12px;
+  padding: 1.15rem 1.3rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+}
+
+.portal-summary-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.portal-summary-icon.blue {
+  background: #eff6ff;
+  color: var(--portal-blue);
+}
+
+.portal-summary-icon.green {
+  background: #ecfdf5;
+  color: var(--portal-green);
+}
+
+.portal-summary-icon.purple {
+  background: #f5f3ff;
+  color: #7c3aed;
+}
+
+.portal-summary-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.portal-summary-content .caption {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--portal-text-muted);
+  margin-bottom: 0.2rem;
+}
+
+.portal-summary-content .title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--portal-text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 0.2rem;
+}
+
+.portal-summary-content .sub {
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+/* ==========================================================================
+   FRISE DES 6 ÉTAPES OFFICIELLES DU PARCOURS ÉTUDIANT (SECTION 7 DU CAHIER)
+   ========================================================================== */
+.portal-journey-card {
+  background: #ffffff;
+  border: 1px solid var(--portal-border);
+  border-radius: 12px;
+  padding: 1.4rem 1.6rem;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+}
+
+.portal-journey-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.15rem;
+}
+
+.portal-journey-header h2 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--portal-text-main);
+  margin: 0;
+}
+
+.portal-journey-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.75rem;
+}
+
+.portal-journey-step {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  background: #f8fafc;
+  border: 1px solid var(--portal-border);
+  border-radius: 8px;
+  padding: 0.85rem 0.75rem;
+  transition: all 0.15s ease;
+}
+
+.portal-journey-step.active {
+  background: #fffbeb;
+  border-color: #fde68a;
+  box-shadow: 0 2px 5px rgba(245, 158, 11, 0.12);
+}
+
+.portal-journey-step.completed {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.portal-step-pill {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: 0.74rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.45rem;
+}
+
+.portal-step-pill.completed {
+  background: var(--portal-green);
+  color: #ffffff;
+}
+
+.portal-step-pill.active {
+  background: var(--portal-amber);
+  color: #ffffff;
+}
+
+.portal-step-pill.pending {
+  background: #e2e8f0;
+  color: #64748b;
+}
+
+.portal-journey-step-title {
+  font-size: 0.8rem;
+  font-weight: 750;
+  color: var(--portal-text-main);
+  margin-bottom: 0.2rem;
+  line-height: 1.3;
+}
+
+.portal-journey-step-desc {
+  font-size: 0.7rem;
+  color: #64748b;
+  line-height: 1.3;
+}
+
+/* ==========================================================================
+   GRILLE 2 COLONNES : DOSSIER & DOCUMENTS
+   ========================================================================== */
+.portal-main-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 1.4rem;
+}
+
+.portal-section-card {
+  background: #ffffff;
+  border: 1px solid var(--portal-border);
+  border-radius: 12px;
+  padding: 1.4rem;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+}
+
+.portal-section-card-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--portal-text-main);
+  margin: 0 0 1.1rem 0;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.portal-section-card-title i {
+  color: var(--portal-blue);
+  font-size: 0.95rem;
+}
+
+/* Table */
+.portal-clean-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.portal-clean-table tr {
+  border-bottom: 1px solid #f8fafc;
+}
+
+.portal-clean-table tr:last-child {
+  border-bottom: none;
+}
+
+.portal-clean-table td {
+  padding: 0.65rem 0;
+  font-size: 0.85rem;
+}
+
+.portal-clean-table td.prop {
+  color: var(--portal-text-muted);
+  font-weight: 500;
+  width: 45%;
+}
+
+.portal-clean-table td.val {
+  color: var(--portal-text-main);
+  font-weight: 700;
+  text-align: right;
+}
+
+/* Documents */
+.portal-docs-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.portal-doc-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.8rem 0.95rem;
+  background: #f8fafc;
+  border: 1px solid var(--portal-border);
+  border-radius: 8px;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.portal-doc-entry:hover {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+}
+
+.portal-doc-info-block {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.portal-doc-icon-red {
+  color: #dc2626;
+  font-size: 1.15rem;
+}
+
+.portal-doc-info-block .title {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.portal-doc-info-block .status {
+  font-size: 0.72rem;
+  color: #64748b;
+}
+
+.portal-btn-download-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--portal-blue);
+  background: #eff6ff;
+  padding: 0.3rem 0.65rem;
+  border-radius: 6px;
+  transition: background 0.15s ease;
+}
+
+.portal-doc-entry:hover .portal-btn-download-pill {
+  background: var(--portal-blue);
+  color: #ffffff;
+}
+
+.portal-badge-pending-tag {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #b45309;
+  background: #fef3c7;
+  padding: 0.2rem 0.55rem;
+  border-radius: 9999px;
+}
+
+/* ==========================================================================
+   VUES SPÉCIFIQUES : PAIEMENTS EN 3 TRANCHES, ASSIDUITÉ, DEMANDES
+   ========================================================================== */
+.portal-installments-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.15rem;
+  margin-top: 1rem;
+}
+
+.portal-installment-card {
+  background: #ffffff;
+  border: 1px solid var(--portal-border);
+  border-radius: 10px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.portal-installment-card.active-due {
+  border-color: #f59e0b;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.12);
+}
+
+.portal-inst-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.portal-inst-title {
+  font-size: 0.85rem;
+  font-weight: 750;
+  color: var(--portal-text-main);
+}
+
+.portal-inst-amount {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: var(--portal-text-main);
+}
+
+.portal-inst-due {
+  font-size: 0.74rem;
+  color: var(--portal-text-muted);
+}
+
+.portal-warning-box {
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  color: #9f1239;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+}
+
+.portal-info-box {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  color: #1e40af;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+/* ==========================================================================
+   RESPONSIVE
+   ========================================================================== */
+@media (max-width: 1024px) {
+  .portal-journey-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .portal-summary-strip {
+    grid-template-columns: 1fr;
+  }
+  .portal-main-grid {
+    grid-template-columns: 1fr;
+  }
+  .portal-installments-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Navigation mobile par défaut masquée sur desktop */
+.portal-mobile-nav-bar {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .portal-sidebar-direct {
+    display: none;
+  }
+
+  .portal-topbar-direct {
+    padding: 0.85rem 1rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .portal-topbar-title h1 {
+    font-size: 1.15rem;
+  }
+
+  /* Barre d'onglets de navigation horizontale sur mobile */
+  .portal-mobile-nav-bar {
+    display: block;
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 0.6rem 0.75rem;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+
+  .portal-mobile-nav-scroll {
+    display: flex;
+    gap: 0.45rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .portal-mobile-nav-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  .portal-mobile-nav-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 0.85rem;
+    border-radius: 9999px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    font-size: 0.78rem;
+    font-weight: 650;
+    white-space: nowrap;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+  }
+
+  .portal-mobile-nav-pill.active {
+    background: #0c1e3d;
+    color: #ffffff;
+    border-color: #0c1e3d;
+  }
+
+  .portal-page-body {
+    padding: 1rem;
+  }
+
+  .portal-action-banner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.9rem;
+    padding: 1.1rem;
+  }
+
+  .portal-action-btn {
+    width: 100%;
+    text-align: center;
+    padding: 0.75rem;
+  }
+
+  .portal-journey-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .portal-summary-strip {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+}

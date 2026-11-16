@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 120" width="100%" height="100%">
+  <defs>
+    <!-- Dégradé Vert Brésilien Dynamique -->
+    <linearGradient id="brGreen" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#047857" />
+      <stop offset="100%" stop-color="#10B981" />
+    </linearGradient>
+
+    <!-- Dégradé Or Solaire -->
+    <linearGradient id="brGold" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#D97706" />
+      <stop offset="60%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#FDE047" />
+    </linearGradient>
+
+    <!-- Dégradé Bleu Océan / Ciel -->
+    <linearGradient id="brBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E3A8A" />
+      <stop offset="100%" stop-color="#2563EB" />
+    </linearGradient>
+
+    <!-- Ombre portée douce -->
+    <filter id="softShadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#047857" flood-opacity="0.18" />
+    </filter>
+  </defs>
+
+  <!-- ==================== EMBLÈME ICONIQUE ==================== -->
+  <g transform="translate(15, 10)">
+    <!-- Fond Losange Brésilien Arrondi -->
+    <rect x="12" y="12" width="76" height="76" rx="22" 
+          transform="rotate(45 50 50)" 
+          fill="url(#brGreen)" 
+          filter="url(#softShadow)" />
+
+    <!-- Cercle / Soleil Intérieur (Bleu Horizon) -->
+    <circle cx="50" cy="50" r="28" fill="url(#brBlue)" opacity="0.95" />
+
+    <!-- Arc Solaire / Équateur d'Or -->
+    <path d="M 28 54 Q 50 42 72 54" 
+          stroke="url(#brGold)" 
+          stroke-width="3.5" 
+          stroke-linecap="round" 
+          fill="none" />
+
+    <!-- Livre Ouvert & Ailes d'Envol (Pédagogie & Mobilité) -->
+    <!-- Page Gauche -->
+    <path d="M 50 63 C 44 56, 36 54, 30 55 C 32 46, 40 44, 49 49 Z" 
+          fill="#FFFFFF" 
+          opacity="0.95" />
+    <!-- Page Droite -->
+    <path d="M 50 63 C 56 56, 64 54, 70 55 C 68 46, 60 44, 51 49 Z" 
+          fill="#FFFFFF" 
+          opacity="0.95" />
+
+    <!-- Étoile du Brésil / Cap vers l'Avenir -->
+    <circle cx="50" cy="36" r="3.2" fill="url(#brGold)" />
+  </g>
+
+  <!-- ==================== TYPOGRAPHIE ET MARQUE ==================== -->
+  <!-- Titre Principal : BRASIL -->
+  <text x="135" y="66" 
+        font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" 
+        font-size="44" 
+        font-weight="900" 
+        letter-spacing="-1px" 
+        fill="#0F172A">
+    BRASIL
+  </text>
+
+  <!-- Séparateur Point d'Or -->
+  <circle cx="316" cy="52" r="5" fill="url(#brGold)" />
+
+  <!-- Suffixe : É (Accent dynamique vert brésilien) -->
+  <text x="330" y="66" 
+        font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" 
+        font-size="44" 
+        font-weight="900" 
+        letter-spacing="-1px" 
+        fill="url(#brGreen)">
+    É
+  </text>
+
+  <!-- Sous-titre Institutionnel -->
+  <text x="137" y="90" 
+        font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" 
+        font-size="13" 
+        font-weight="700" 
+        letter-spacing="2.8px" 
+        fill="#059669">
+    INSTITUT DE PORTUGAIS BRÉSILIEN
+  </text>
+</svg>
+

@@ -1,0 +1,556 @@
+/* ==========================================================================
+   BRASIL·É — AUTHENTICATION PAGES (REGISTRATION & LOGIN)
+   Design: Fullscreen Aerial Brazilian University View + Frosted Glass Card
+   ========================================================================== */
+
+.glass-auth-viewport {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  background-color: #0f172a;
+  color: #0f172a;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+/* --------------------------------------------------------------------------
+   Background Aerial Campus Layer + Concentric Radar Rings
+   -------------------------------------------------------------------------- */
+
+.glass-auth-bg-layer {
+  position: fixed;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.2) 0%, rgba(219, 234, 254, 0.4) 45%, rgba(96, 165, 250, 0.45) 100%),
+    url('/bg-university-aerial.jpg');
+  background-size: cover;
+  background-position: center 30%;
+  filter: brightness(1.02) contrast(1.02);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Anneaux concentriques d'ondes (comme dans la référence) */
+.glass-auth-ripple-rings {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.ripple-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.ring-1 {
+  width: 520px;
+  height: 520px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
+}
+
+.ring-2 {
+  width: 780px;
+  height: 780px;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+}
+
+.ring-3 {
+  width: 1080px;
+  height: 1080px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.ring-4 {
+  width: 1420px;
+  height: 1420px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.ring-5 {
+  width: 1800px;
+  height: 1800px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* --------------------------------------------------------------------------
+   Top Floating Header
+   -------------------------------------------------------------------------- */
+
+.glass-auth-header {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 2.25rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.glass-auth-back-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1.15rem;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  color: #0f172a;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.glass-auth-back-pill:hover {
+  background: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.12);
+}
+
+.glass-auth-brand-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 1rem;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+
+.glass-auth-logo-icon {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+.glass-auth-brand-name {
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+
+/* --------------------------------------------------------------------------
+   Main Centered Content & Frosted Glass Card
+   -------------------------------------------------------------------------- */
+
+.glass-auth-main {
+  position: relative;
+  z-index: 5;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  box-sizing: border-box;
+  min-height: 100vh;
+}
+
+.glass-card {
+  width: 100%;
+  position: relative;
+  background: rgba(255, 255, 255, 0.48);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  border-radius: 30px;
+  box-shadow:
+    0 24px 60px -12px rgba(15, 23, 42, 0.16),
+    0 0 0 1px rgba(255, 255, 255, 0.4) inset,
+    0 4px 16px rgba(0, 0, 0, 0.04);
+  box-sizing: border-box;
+  overflow: hidden;
+  animation: glassCardEnter 0.4s ease-out forwards;
+}
+
+@keyframes glassCardEnter {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.glass-card-registration {
+  max-width: 680px;
+  padding: 2.75rem 3rem;
+}
+
+.glass-card-login {
+  max-width: 440px;
+  padding: 2.75rem 2.5rem;
+}
+
+/* Sprout / Academic Top Emblem Badge (like screenshot) */
+.glass-top-emblem-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+}
+
+.glass-icon-badge {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 4px 16px rgba(15, 23, 42, 0.08),
+    0 1px 3px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.glass-icon-badge.success {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+}
+
+/* Title & Subtitle */
+.glass-card-title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #0f172a;
+  text-align: center;
+  margin: 0 0 0.35rem 0;
+  line-height: 1.2;
+}
+
+.glass-card-subtitle {
+  font-size: 0.925rem;
+  color: #334155;
+  font-weight: 500;
+  text-align: center;
+  margin: 0 0 1.5rem 0;
+  line-height: 1.45;
+}
+
+/* Pre-selected Chip Pill */
+.glass-chip-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.9rem;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin: -0.5rem auto 1.5rem;
+  width: fit-content;
+  display: flex;
+  background: rgba(15, 23, 42, 0.06);
+  color: #334155;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+}
+
+.glass-chip-pill.active {
+  background: rgba(30, 58, 138, 0.08);
+  color: #1e3a8a;
+  border-color: rgba(30, 58, 138, 0.22);
+}
+
+/* Error badge */
+.glass-error-badge {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 1.25rem;
+  text-align: center;
+}
+
+/* --------------------------------------------------------------------------
+   Form Grid & Field Styling
+   -------------------------------------------------------------------------- */
+
+.glass-actual-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.glass-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.glass-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  text-align: left;
+}
+
+.glass-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1e293b;
+  letter-spacing: -0.01em;
+}
+
+.glass-input {
+  width: 100%;
+  padding: 0.75rem 0.95rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(203, 213, 225, 0.85);
+  font-size: 0.925rem;
+  color: #0f172a;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+}
+
+.glass-input::placeholder {
+  color: #64748b;
+}
+
+.glass-input:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.94);
+  border-color: #0f172a;
+  box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.1);
+}
+
+.glass-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.85rem center;
+  background-size: 1rem;
+  padding-right: 2.25rem;
+  cursor: pointer;
+}
+
+/* Saisie combinée indicatif pays + numéro de téléphone */
+.glass-phone-combined {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+  width: 100%;
+}
+
+.glass-dial-select {
+  flex: 0 0 105px;
+  min-width: 95px;
+  padding-left: 0.7rem;
+  padding-right: 1.5rem;
+  background-position: right 0.4rem center;
+  font-weight: 700;
+  font-size: 0.88rem;
+  letter-spacing: -0.01em;
+}
+
+.glass-phone-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.glass-password-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.glass-password-input {
+  padding-right: 2.5rem;
+}
+
+.glass-eye-btn {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
+}
+
+.glass-eye-btn:hover {
+  color: #0f172a;
+}
+
+/* Options row: Remember me & Forgot Password */
+.glass-options-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0.25rem 0 0.5rem;
+  font-size: 0.85rem;
+}
+
+.glass-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: #475569;
+  cursor: pointer;
+  user-select: none;
+}
+
+.glass-checkbox {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  accent-color: #0f172a;
+  cursor: pointer;
+}
+
+.glass-forgot-link {
+  color: #475569;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.15s ease;
+}
+
+.glass-forgot-link:hover {
+  color: #0f172a;
+  text-decoration: underline;
+}
+
+/* --------------------------------------------------------------------------
+   Submit Buttons (Black / Dark Slate matching the screenshot)
+   -------------------------------------------------------------------------- */
+
+.glass-btn-primary {
+  width: 100%;
+  padding: 0.9rem 1.25rem;
+  border-radius: 12px;
+  background: #0f172a;
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.22);
+  margin-top: 0.5rem;
+}
+
+.glass-btn-primary:hover:not(:disabled) {
+  background: #1e293b;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.28);
+}
+
+.glass-btn-primary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.glass-btn-secondary {
+  width: 100%;
+  padding: 0.85rem 1.25rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.8);
+  color: #0f172a;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border: 1.5px solid #cbd5e1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.glass-btn-secondary:hover {
+  background: #ffffff;
+}
+
+/* Footer Link */
+.glass-footer-link-row {
+  margin-top: 0.75rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.glass-text-link {
+  color: #0f172a;
+  font-weight: 700;
+  text-decoration: none;
+  margin-left: 0.25rem;
+  transition: color 0.15s ease;
+}
+
+.glass-text-link:hover {
+  text-decoration: underline;
+}
+
+/* --------------------------------------------------------------------------
+   Success View
+   -------------------------------------------------------------------------- */
+
+.glass-success-view {
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.glass-action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+/* --------------------------------------------------------------------------
+   Responsiveness
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 680px) {
+  .glass-card-registration,
+  .glass-card-login {
+    padding: 2rem 1.5rem;
+    border-radius: 24px;
+  }
+
+  .glass-form-row {
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+  }
+
+  .glass-auth-header {
+    padding: 1rem 1.25rem;
+  }
+
+  .ring-1 { width: 340px; height: 340px; }
+  .ring-2 { width: 480px; height: 480px; }
+  .ring-3 { width: 640px; height: 640px; }
+  .ring-4 { width: 840px; height: 840px; }
+  .ring-5 { width: 1040px; height: 1040px; }
+}
