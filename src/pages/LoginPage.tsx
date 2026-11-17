@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import './RegistrationPage.css';
 import { API_ENDPOINTS } from '../config/api';
-import { useLanguage, LANGUAGE_LABELS, type Language } from '../i18n/LanguageContext';
+import { useLanguage } from '../i18n/LanguageContext';
 import {
   Eye,
   EyeOff,
@@ -11,8 +11,7 @@ import {
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
-  const { lang, setLang, t } = useLanguage();
-  const languages: Language[] = ['fr', 'en', 'pt'];
+  const { t } = useLanguage();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -91,21 +90,6 @@ export const LoginPage: React.FC = () => {
       {/* Main Centered Frosted Glass Card */}
       <main className="glass-auth-main">
         <div className="glass-card glass-card-login">
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.75rem' }}>
-            <div className="lang-switcher-pill is-light">
-              {languages.map((code) => (
-                <button
-                  key={code}
-                  type="button"
-                  className={`lang-btn-item ${lang === code ? 'is-active' : ''}`}
-                  onClick={() => setLang(code)}
-                >
-                  {LANGUAGE_LABELS[code].short}
-                </button>
-              ))}
-            </div>
-          </div>
-
           {isSuccess ? (
             <div className="glass-success-view">
               <div className="glass-icon-badge success">

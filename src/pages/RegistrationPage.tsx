@@ -7,7 +7,7 @@ import {
   CheckCircle,
 } from 'lucide-react';
 import { API_ENDPOINTS } from '../config/api';
-import { useLanguage, LANGUAGE_LABELS, type Language } from '../i18n/LanguageContext';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface PartnerOption {
   sigle: string;
@@ -93,8 +93,7 @@ const dialCodeList = [
 export const RegistrationPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { lang, setLang, t } = useLanguage();
-  const languages: Language[] = ['fr', 'en', 'pt'];
+  const { lang, t } = useLanguage();
 
   const preselectedUniversity = searchParams.get('universite') || '';
   const preselectedLevel = searchParams.get('niveau') || 'Niveau A1 — Débutant';
@@ -254,21 +253,6 @@ export const RegistrationPage: React.FC = () => {
       {/* Centered Glassmorphism Card */}
       <main className="glass-auth-main">
         <div className="glass-card glass-card-registration">
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.5rem' }}>
-            <div className="lang-switcher-pill is-light">
-              {languages.map((code) => (
-                <button
-                  key={code}
-                  type="button"
-                  className={`lang-btn-item ${lang === code ? 'is-active' : ''}`}
-                  onClick={() => setLang(code)}
-                >
-                  {LANGUAGE_LABELS[code].short}
-                </button>
-              ))}
-            </div>
-          </div>
-
           {isSuccess ? (
             <div className="glass-success-view">
               <div className="glass-icon-badge success">
