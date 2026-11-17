@@ -75,12 +75,13 @@ interface AcademicPartnersProps {
 }
 
 export const AcademicPartners: React.FC<AcademicPartnersProps> = ({ onSelectUniversity }) => {
-  const { t } = useLanguage();
+  const { lang, t } = useLanguage();
   const [universities, setUniversities] = useState<UniversityItem[]>(fallbackUniversities);
+  const [hasLoadedFromApi, setHasLoadedFromApi] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
-    fetch(API_ENDPOINTS.academicUniversities)
+    fetch(`${API_ENDPOINTS.academicUniversities}?lang=${lang}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((payload) => {
         if (!isMounted || !payload?.data || !Array.isArray(payload.data) || payload.data.length === 0) {
@@ -97,13 +98,14 @@ export const AcademicPartners: React.FC<AcademicPartnersProps> = ({ onSelectUniv
           badgeGradient: item.badge_gradient || 'linear-gradient(135deg, #091e42 0%, #1877f2 100%)',
         }));
         setUniversities(mapped);
+        setHasLoadedFromApi(true);
       })
       .catch(() => {});
 
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [lang]);
 
   return (
     <section id="partenaires" className="academic-prestigious-section reveal-section">
@@ -121,8 +123,8 @@ export const AcademicPartners: React.FC<AcademicPartnersProps> = ({ onSelectUniv
         <div className="prestigious-unis-grid reveal-grid">
           {universities.map((uni, idx) => {
             const localized = t.academic.uniTranslations[uni.sigle];
-            const displayFullName = localized?.fullName || uni.fullName;
-            const displayHighlight = localized?.highlight || uni.highlight;
+            const displayFullName = hasLoadedFromApi ? uni.fullName : (localized?.fullName || uni.fullName);
+            const displayHighlight = hasLoadedFromApi ? uni.highlight : (localized?.highlight || uni.highlight);
 
             return (
               <div key={uni.id ?? idx} className="prestigious-uni-card">

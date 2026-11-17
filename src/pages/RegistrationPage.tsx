@@ -126,10 +126,10 @@ export const RegistrationPage: React.FC = () => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, []);
 
-  // Fetch live universities, levels, and cities from database API
+  // Fetch live universities, levels, and cities from database API (auto-translated per lang)
   useEffect(() => {
     // 1. Universités partenaires
-    fetch(API_ENDPOINTS.academicUniversities)
+    fetch(`${API_ENDPOINTS.academicUniversities}?lang=${lang}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((payload) => {
         if (payload?.data && Array.isArray(payload.data) && payload.data.length > 0) {
@@ -143,8 +143,8 @@ export const RegistrationPage: React.FC = () => {
       })
       .catch(() => {});
 
-    // 2. Niveaux d'études (gérés par l'admin dans Filament)
-    fetch(API_ENDPOINTS.academicLevels)
+    // 2. Niveaux d'études (gérés par l'admin dans Filament et traduits automatiquement)
+    fetch(`${API_ENDPOINTS.academicLevels}?lang=${lang}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((payload) => {
         if (payload?.data && Array.isArray(payload.data) && payload.data.length > 0) {
@@ -154,12 +154,16 @@ export const RegistrationPage: React.FC = () => {
             name: l.name,
           }));
           setLevels(list);
+          setDesiredLevel((prev) => {
+            const matchById = list.find((item: LevelOption) => item.name === prev);
+            return matchById ? matchById.name : list[0].name;
+          });
         }
       })
       .catch(() => {});
 
     // 3. Villes d'accueil (gérées par l'admin dans Filament)
-    fetch(API_ENDPOINTS.academicCities)
+    fetch(`${API_ENDPOINTS.academicCities}?lang=${lang}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((payload) => {
         if (payload?.data && Array.isArray(payload.data) && payload.data.length > 0) {
@@ -172,7 +176,7 @@ export const RegistrationPage: React.FC = () => {
         }
       })
       .catch(() => {});
-  }, []);
+  }, [lang]);
 
   // Auto-sync city when university changes
   useEffect(() => {
