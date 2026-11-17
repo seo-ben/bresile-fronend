@@ -219,7 +219,16 @@ export const RegistrationPage: React.FC = () => {
       });
 
       const data = await res.json();
-      if (res.ok || data?.success || data?.user) {
+      const token = data?.data?.token || data?.token;
+      const user = data?.data?.user || data?.user;
+
+      if (res.ok || data?.success || user) {
+        if (token) {
+          localStorage.setItem('student_token', token);
+        }
+        if (user) {
+          localStorage.setItem('student_user', JSON.stringify(user));
+        }
         setIsSuccess(true);
       } else {
         if (data?.message && (data.message.includes('already been taken') || data.message.includes('unique'))) {
@@ -266,7 +275,7 @@ export const RegistrationPage: React.FC = () => {
                 <button
                   type="button"
                   className="glass-btn-primary"
-                  onClick={() => navigate('/connexion')}
+                  onClick={() => navigate('/portail')}
                 >
                   {t.auth.accessPortal}
                 </button>

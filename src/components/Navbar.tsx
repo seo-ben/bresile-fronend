@@ -10,6 +10,20 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister }) => {
   const { lang, setLang, t } = useLanguage();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const checkAuth = () => {
+      const hasAuth = Boolean(
+        localStorage.getItem('student_token') || localStorage.getItem('student_user')
+      );
+      setIsLoggedIn(hasAuth);
+    };
+
+    checkAuth();
+    window.addEventListener('storage', checkAuth);
+    return () => window.removeEventListener('storage', checkAuth);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -53,7 +67,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister }) => {
           <div className="header-right header-desktop-nav">
             <a href="#formations" className="header-link">{t.nav.programs}</a>
             <a href="#partenaires" className="header-link">{t.nav.universities}</a>
-            <Link to="/connexion" className="header-link">{t.nav.login}</Link>
+            {!isLoggedIn && (
+              <Link to="/connexion" className="header-link">{t.nav.login}</Link>
+            )}
 
             {/* Sélecteur de langue FR / EN / PT */}
             <div className="lang-switcher-pill" role="group" aria-label="Langue">
@@ -70,13 +86,24 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister }) => {
               ))}
             </div>
 
-            <button
-              type="button"
-              className="btn-orange-pill"
-              onClick={onOpenRegister}
-            >
-              {t.nav.registerCta}
-            </button>
+            {isLoggedIn ? (
+              <Link
+                to="/portail"
+                className="btn-orange-pill"
+                style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}
+              >
+                <i className="fa-solid fa-gauge-high"></i>
+                <span>{t.nav.drawerPortal}</span>
+              </Link>
+            ) : (
+              <button
+                type="button"
+                className="btn-orange-pill"
+                onClick={onOpenRegister}
+              >
+                {t.nav.registerCta}
+              </button>
+            )}
           </div>
 
           {/* Actions Navbar Mobile */}
@@ -95,17 +122,29 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister }) => {
               ))}
             </select>
 
-            <Link to="/connexion" className="mobile-nav-link-connexion">
-              {t.nav.login}
-            </Link>
+            {isLoggedIn ? (
+              <Link
+                to="/portail"
+                className="btn-mobile-inscription"
+                style={{ textDecoration: 'none' }}
+              >
+                {t.nav.drawerPortal}
+              </Link>
+            ) : (
+              <>
+                <Link to="/connexion" className="mobile-nav-link-connexion">
+                  {t.nav.login}
+                </Link>
 
-            <button
-              type="button"
-              className="btn-mobile-inscription"
-              onClick={onOpenRegister}
-            >
-              {t.nav.registerShort}
-            </button>
+                <button
+                  type="button"
+                  className="btn-mobile-inscription"
+                  onClick={onOpenRegister}
+                >
+                  {t.nav.registerShort}
+                </button>
+              </>
+            )}
 
             <button
               type="button"
