@@ -171,6 +171,17 @@ const portalI18n: Record<Language, Record<string, string>> = {
     j6Desc:
       "Délivrance de l'ensemble des pièces consulaires pour le Visa VITEM IV. Garantie contractuelle de remboursement de 85% de la somme versée en cas de refus consulaire.",
     payTabTitle: 'Plan de Règlement & Suivi des Échéances (Stripe & Virement)',
+    payModeLabel: 'Choisissez votre mode de règlement :',
+    payModeFullTitle: 'Payer la totalité (Comptant — 1 seule fois)',
+    payModeFullSub: 'Règlement intégral du niveau en un seul versement • Attestation immédiate',
+    payModeSplitTitle: 'Payer en partie (Échelonné en 3 tranches)',
+    payModeSplitSub: '1ère tranche maintenant, puis 2 mensualités sur les mois suivants',
+    fullCardTitle: 'Règlement Intégral (100% de la Scolarité)',
+    fullCardBadge: 'Paiement unique',
+    fullCardDue: 'Validation complète du niveau sans échéance mensuelle',
+    fullCardDesc:
+      "En réglant la totalité en une seule fois, vous êtes définitivement inscrit sur la liste des cours sans risque de suspension mensuelle et votre attestation officielle est délivrée sous 48h.",
+    stripeFullBtn: 'Payer la totalité (500,00 €) par Carte (Stripe)',
     payWarning:
       "Règle d'exclusion automatique : Conformément au règlement de l'école, si la mensualité du mois suivant n'est pas réglée à la date d'échéance, le nom de l'étudiant est immédiatement retiré de la liste transmise aux enseignants jusqu'à régularisation.",
     inst1Title: 'Tranche 1 (Mois 1)',
@@ -333,6 +344,17 @@ const portalI18n: Record<Language, Record<string, string>> = {
     j6Desc:
       'Issuance of all consulate documents for the VITEM IV Visa. Contractual 85% refund guarantee in case of visa denial.',
     payTabTitle: 'Payment Plan & Installment Schedule (Stripe & Bank Wire)',
+    payModeLabel: 'Choose your payment option:',
+    payModeFullTitle: 'Pay in Full (Single lump-sum payment)',
+    payModeFullSub: 'Full level tuition in one payment • Immediate certificate issuance',
+    payModeSplitTitle: 'Pay in Installments (3 monthly payments)',
+    payModeSplitSub: '1st installment now, followed by 2 monthly payments',
+    fullCardTitle: 'Full Tuition Payment (100% of Level)',
+    fullCardBadge: 'Single payment',
+    fullCardDue: 'Complete level validation with no monthly due dates',
+    fullCardDesc:
+      'By paying the full tuition at once, your enrollment on class rosters is permanently secured with no monthly suspension risk, and your official certificate is issued within 48h.',
+    stripeFullBtn: 'Pay Full Amount (€500.00) by Card (Stripe)',
     payWarning:
       'Automatic suspension rule: In accordance with school regulations, if the next monthly installment is not paid by the due date, the student is temporarily removed from teacher rosters until settled.',
     inst1Title: 'Installment 1 (Month 1)',
@@ -495,6 +517,17 @@ const portalI18n: Record<Language, Record<string, string>> = {
     j6Desc:
       'Emissão de toda a documentação consular para o Visto VITEM IV. Garantia contratual de reembolso de 85% em caso de recusa consular.',
     payTabTitle: 'Plano de Pagamento & Controle de Parcelas (Stripe & Transferência)',
+    payModeLabel: 'Escolha sua forma de pagamento:',
+    payModeFullTitle: 'Pagar o valor total (À vista — parcela única)',
+    payModeFullSub: 'Quitação integral do nível de uma só vez • Declaração imediata',
+    payModeSplitTitle: 'Pagar parcelado (Em 3 parcelas mensais)',
+    payModeSplitSub: '1ª parcela agora e 2 mensalidades nos meses seguintes',
+    fullCardTitle: 'Pagamento Integral (100% do Curso)',
+    fullCardBadge: 'Parcela única',
+    fullCardDue: 'Validação completa do nível sem mensalidades futuras',
+    fullCardDesc:
+      'Ao quitar o valor total de uma só vez, sua matrícula fica garantida durante todo o nível sem risco de suspensão mensal e sua declaração oficial é emitida em até 48h.',
+    stripeFullBtn: 'Pagar Valor Total (500,00 €) com Cartão (Stripe)',
     payWarning:
       'Regra de suspensão automática: Conforme o regulamento escolar, caso a parcela mensal seguinte não seja quitada até o vencimento, o nome do estudante é temporariamente retirado da lista de presença até a regularização.',
     inst1Title: 'Parcela 1 (Mês 1)',
@@ -551,6 +584,7 @@ export const StudentPortalPage: React.FC = () => {
 
   const [user, setUser] = useState<StudentUser | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>('overview');
+  const [paymentPlanChoice, setPaymentPlanChoice] = useState<'full' | 'installments'>('installments');
   const [isProcessingStripe, setIsProcessingStripe] = useState(false);
   const [stripeSuccessMsg, setStripeSuccessMsg] = useState('');
 
@@ -1259,58 +1293,132 @@ export const StudentPortalPage: React.FC = () => {
                 </div>
               )}
 
-              <div className="portal-warning-box" style={{ marginBottom: '1.25rem' }}>
-                <i className="fa-solid fa-triangle-exclamation"></i>
-                <div>{pt.payWarning}</div>
+              {/* Sélecteur : Payer la totalité OU Payer en 3 tranches */}
+              <div style={{ marginBottom: '1.35rem' }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#334155', marginBottom: '0.65rem' }}>
+                  {pt.payModeLabel}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '0.85rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentPlanChoice('full')}
+                    style={{
+                      textAlign: 'left',
+                      padding: '1rem 1.15rem',
+                      borderRadius: '14px',
+                      border: paymentPlanChoice === 'full' ? '2px solid #059669' : '1px solid #cbd5e1',
+                      background: paymentPlanChoice === 'full' ? '#ecfdf5' : '#ffffff',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                      <strong style={{ fontSize: '0.92rem', color: '#0f172a' }}>{pt.payModeFullTitle}</strong>
+                      <span style={{ fontWeight: 800, color: '#059669', fontSize: '0.95rem' }}>500,00 €</span>
+                    </div>
+                    <div style={{ fontSize: '0.78rem', color: '#475569' }}>{pt.payModeFullSub}</div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setPaymentPlanChoice('installments')}
+                    style={{
+                      textAlign: 'left',
+                      padding: '1rem 1.15rem',
+                      borderRadius: '14px',
+                      border: paymentPlanChoice === 'installments' ? '2px solid #ea580c' : '1px solid #cbd5e1',
+                      background: paymentPlanChoice === 'installments' ? '#fff7ed' : '#ffffff',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                      <strong style={{ fontSize: '0.92rem', color: '#0f172a' }}>{pt.payModeSplitTitle}</strong>
+                      <span style={{ fontWeight: 800, color: '#ea580c', fontSize: '0.95rem' }}>170 € + 2×165 €</span>
+                    </div>
+                    <div style={{ fontSize: '0.78rem', color: '#475569' }}>{pt.payModeSplitSub}</div>
+                  </button>
+                </div>
               </div>
 
-              <div className="portal-installments-grid">
-                <div className="portal-installment-card active-due">
+              {paymentPlanChoice === 'full' ? (
+                <div className="portal-installment-card active-due" style={{ maxWidth: '520px', borderColor: '#10b981', background: '#f0fdf4' }}>
                   <div className="portal-inst-header">
-                    <span className="portal-inst-title">{pt.inst1Title}</span>
-                    <span className="portal-badge-pending-tag">{pt.inst1Badge}</span>
+                    <span className="portal-inst-title">{pt.fullCardTitle}</span>
+                    <span className="portal-status-tag">{pt.fullCardBadge}</span>
                   </div>
-                  <div className="portal-inst-amount">170,00 €</div>
-                  <div className="portal-inst-due">{pt.inst1Due}</div>
-                  <div style={{ fontSize: '0.75rem', color: '#475569' }}>
-                    {pt.inst1Desc}
+                  <div className="portal-inst-amount" style={{ color: '#065f46' }}>500,00 €</div>
+                  <div className="portal-inst-due">{pt.fullCardDue}</div>
+                  <div style={{ fontSize: '0.8rem', color: '#334155', lineHeight: 1.5, marginBottom: '0.5rem' }}>
+                    {pt.fullCardDesc}
                   </div>
                   <button
                     type="button"
                     className="portal-action-btn"
-                    style={{ marginTop: '0.5rem', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                    style={{ marginTop: '0.5rem', width: '100%', background: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
                     disabled={isProcessingStripe}
-                    onClick={() => handleStripePayment(170, pt.inst1Title)}
+                    onClick={() => handleStripePayment(500, `${pt.fullCardTitle} — ${formationTitle}`)}
                   >
                     <i className="fa-brands fa-stripe" style={{ fontSize: '1.4rem' }}></i>
-                    <span>{isProcessingStripe ? pt.stripeLoading : pt.stripeBtn}</span>
+                    <span>{isProcessingStripe ? pt.stripeLoading : pt.stripeFullBtn}</span>
                   </button>
                 </div>
+              ) : (
+                <>
+                  <div className="portal-warning-box" style={{ marginBottom: '1.25rem' }}>
+                    <i className="fa-solid fa-triangle-exclamation"></i>
+                    <div>{pt.payWarning}</div>
+                  </div>
 
-                <div className="portal-installment-card">
-                  <div className="portal-inst-header">
-                    <span className="portal-inst-title">{pt.inst2Title}</span>
-                    <span style={{ fontSize: '0.74rem', color: '#94a3b8' }}>{pt.j5Tag}</span>
-                  </div>
-                  <div className="portal-inst-amount">165,00 €</div>
-                  <div className="portal-inst-due">{pt.inst2Due}</div>
-                  <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                    {pt.inst2Desc}
-                  </div>
-                </div>
+                  <div className="portal-installments-grid">
+                    <div className="portal-installment-card active-due">
+                      <div className="portal-inst-header">
+                        <span className="portal-inst-title">{pt.inst1Title}</span>
+                        <span className="portal-badge-pending-tag">{pt.inst1Badge}</span>
+                      </div>
+                      <div className="portal-inst-amount">170,00 €</div>
+                      <div className="portal-inst-due">{pt.inst1Due}</div>
+                      <div style={{ fontSize: '0.75rem', color: '#475569' }}>
+                        {pt.inst1Desc}
+                      </div>
+                      <button
+                        type="button"
+                        className="portal-action-btn"
+                        style={{ marginTop: '0.5rem', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                        disabled={isProcessingStripe}
+                        onClick={() => handleStripePayment(170, pt.inst1Title)}
+                      >
+                        <i className="fa-brands fa-stripe" style={{ fontSize: '1.4rem' }}></i>
+                        <span>{isProcessingStripe ? pt.stripeLoading : pt.stripeBtn}</span>
+                      </button>
+                    </div>
 
-                <div className="portal-installment-card">
-                  <div className="portal-inst-header">
-                    <span className="portal-inst-title">{pt.inst3Title}</span>
-                    <span style={{ fontSize: '0.74rem', color: '#94a3b8' }}>{pt.j5Tag}</span>
+                    <div className="portal-installment-card">
+                      <div className="portal-inst-header">
+                        <span className="portal-inst-title">{pt.inst2Title}</span>
+                        <span style={{ fontSize: '0.74rem', color: '#94a3b8' }}>{pt.j5Tag}</span>
+                      </div>
+                      <div className="portal-inst-amount">165,00 €</div>
+                      <div className="portal-inst-due">{pt.inst2Due}</div>
+                      <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                        {pt.inst2Desc}
+                      </div>
+                    </div>
+
+                    <div className="portal-installment-card">
+                      <div className="portal-inst-header">
+                        <span className="portal-inst-title">{pt.inst3Title}</span>
+                        <span style={{ fontSize: '0.74rem', color: '#94a3b8' }}>{pt.j5Tag}</span>
+                      </div>
+                      <div className="portal-inst-amount">165,00 €</div>
+                      <div className="portal-inst-due">{pt.inst3Due}</div>
+                      <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                        {pt.inst3Desc}
+                      </div>
+                    </div>
                   </div>
-                  <div className="portal-inst-amount">165,00 €</div>
-                  <div className="portal-inst-due">{pt.inst3Due}</div>
-                  <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                    {pt.inst3Desc}
-                  </div>
-                </div>
-              </div>
+                </>
+              )}
 
               <div style={{ marginTop: '1.75rem', paddingTop: '1.25rem', borderTop: '1px solid #f1f5f9' }}>
                 <h4 style={{ fontSize: '0.92rem', fontWeight: 750, color: '#0f172a', marginBottom: '0.75rem' }}>
