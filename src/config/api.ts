@@ -23,4 +23,5 @@ export const API_ENDPOINTS = {
   me: `${API_BASE_URL}/api/v1/auth/me`,
   stripeCheckout: `${API_BASE_URL}/api/v1/payments/stripe/checkout`,
   stripeVerify: `${API_BASE_URL}/api/v1/payments/stripe/verify`,
+  whatsappLead: `${API_BASE_URL}/api/v1/leads/whatsapp`,
 } as const;

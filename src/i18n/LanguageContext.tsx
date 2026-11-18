@@ -202,8 +202,10 @@ export const translations = {
       ctaHeadline: "Lancez dès aujourd'hui votre projet d'études au Brésil !",
       ctaSubhead:
         'Votre attestation officielle d’inscription et votre accompagnement visa délivrés en moins de 48 heures.',
-      inputPlaceholder: 'Entrez votre adresse e-mail ou numéro WhatsApp...',
-      submitBtn: 'Commencer mon inscription',
+      inputPlaceholder: 'Entrez votre numéro WhatsApp (ex: 77 123 45 67)...',
+      submitBtn: 'Envoyer mon numéro',
+      sendingBtn: 'Envoi en cours...',
+      successMsg: 'Numéro WhatsApp transmis ! Notre administration vous contactera très rapidement.',
       bio: 'Brasil·É offre un accompagnement d’excellence aux étudiants africains : apprentissage immersif du portugais, préparation au diplôme d’État CELPE-Bras et mobilité académique vers les meilleures universités du Brésil.',
       colPrograms: 'Nos Formations',
       programsList: [
@@ -457,8 +459,10 @@ export const translations = {
       ctaHeadline: 'Start your study project in Brazil today!',
       ctaSubhead:
         'Your official enrollment certificate and visa support delivered in under 48 hours.',
-      inputPlaceholder: 'Enter your email address or WhatsApp number...',
-      submitBtn: 'Start My Application',
+      inputPlaceholder: 'Enter your WhatsApp number (e.g. 77 123 45 67)...',
+      submitBtn: 'Send My Number',
+      sendingBtn: 'Sending...',
+      successMsg: 'WhatsApp number received! Our admissions team will contact you shortly.',
       bio: 'Brasil·É provides world-class support to international students: immersive Portuguese training, CELPE-Bras state exam preparation, and academic mobility to Brazil’s top universities.',
       colPrograms: 'Our Programs',
       programsList: [
@@ -712,8 +716,10 @@ export const translations = {
       ctaHeadline: 'Comece hoje mesmo o seu projeto de estudos no Brasil!',
       ctaSubhead:
         'Sua declaração oficial de matrícula e assessoria de visto entregues em menos de 48 horas.',
-      inputPlaceholder: 'Digite seu e-mail ou número de WhatsApp...',
-      submitBtn: 'Iniciar minha inscrição',
+      inputPlaceholder: 'Digite seu número de WhatsApp (ex: 77 123 45 67)...',
+      submitBtn: 'Enviar meu número',
+      sendingBtn: 'Enviando...',
+      successMsg: 'Número de WhatsApp recebido! Nossa equipe entrará em contato em breve.',
       bio: 'A Brasil·É oferece acompanhamento de excelência a estudantes internacionais: imersão em língua portuguesa, preparação para o exame oficial CELPE-Bras e mobilidade acadêmica para as melhores universidades do Brasil.',
       colPrograms: 'Nossos Cursos',
       programsList: [

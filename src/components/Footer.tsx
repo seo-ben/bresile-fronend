@@ -1,17 +1,67 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../i18n/LanguageContext';
+import { API_ENDPOINTS } from '../config/api';
 
 interface FooterProps {
   onOpenRegister: () => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onOpenRegister }) => {
-  const { t } = useLanguage();
-  const [leadInput, setLeadInput] = useState('');
+const whatsappDialCodes = [
+  { code: '+221', flag: '🇸🇳', country: 'Sénégal' },
+  { code: '+225', flag: '🇨🇮', country: "Côte d'Ivoire" },
+  { code: '+237', flag: '🇨🇲', country: 'Cameroun' },
+  { code: '+224', flag: '🇬🇳', country: 'Guinée' },
+  { code: '+223', flag: '🇲🇱', country: 'Mali' },
+  { code: '+229', flag: '🇧🇯', country: 'Bénin' },
+  { code: '+228', flag: '🇹🇬', country: 'Togo' },
+  { code: '+242', flag: '🇨🇬', country: 'Congo' },
+  { code: '+243', flag: '🇨🇩', country: 'RD Congo' },
+  { code: '+226', flag: '🇧🇫', country: 'Burkina Faso' },
+  { code: '+241', flag: '🇬🇦', country: 'Gabon' },
+  { code: '+55', flag: '🇧🇷', country: 'Brésil' },
+  { code: '+33', flag: '🇫🇷', country: 'France' },
+  { code: '+1', flag: '🇺🇸', country: 'International' },
+];
 
-  const handleCtaSubmit = (e: React.FormEvent) => {
+export const Footer: React.FC<FooterProps> = ({ onOpenRegister }) => {
+  const { lang, t } = useLanguage();
+  const [dialCode, setDialCode] = useState('+221');
+  const [phoneInput, setPhoneInput] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const [sentSuccess, setSentSuccess] = useState(false);
+
+  const handleCtaSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onOpenRegister();
+    const cleaned = phoneInput.replace(/[^0-9\s-]/g, '').trim();
+    if (cleaned.length < 5) return;
+
+    setIsSending(true);
+    setSentSuccess(false);
+
+    const selectedCountry = whatsappDialCodes.find((d) => d.code === dialCode)?.country || '';
+
+    try {
+      await fetch(`${API_ENDPOINTS.whatsappLead}?lang=${lang}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          dial_code: dialCode,
+          country_name: selectedCountry,
+          phone_number: cleaned,
+          locale: lang,
+        }),
+      });
+      setSentSuccess(true);
+      setPhoneInput('');
+    } catch {
+      setSentSuccess(true);
+      setPhoneInput('');
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
@@ -27,20 +77,69 @@ export const Footer: React.FC<FooterProps> = ({ onOpenRegister }) => {
           </p>
 
           <form className="footer-cta-capsule-bar reveal-left reveal-delay-1" onSubmit={handleCtaSubmit}>
-            <div className="capsule-input-prefix">
-              <i className="fa-solid fa-globe"></i>
+            <div className="capsule-input-prefix" style={{ paddingRight: '0.25rem', display: 'flex', alignItems: 'center' }}>
+              <select
+                value={dialCode}
+                onChange={(e) => setDialCode(e.target.value)}
+                aria-label="Indicatif pays WhatsApp"
+                style={{
+                  border: 'none',
+                  background: '#f1f5f9',
+                  borderRadius: '999px',
+                  padding: '0.45rem 0.65rem',
+                  fontSize: '0.88rem',
+                  fontWeight: 700,
+                  color: '#0f172a',
+                  cursor: 'pointer',
+                  outline: 'none',
+                }}
+              >
+                {whatsappDialCodes.map((d) => (
+                  <option key={d.code} value={d.code}>
+                    {d.flag} {d.code}
+                  </option>
+                ))}
+              </select>
             </div>
             <input
-              type="text"
+              type="tel"
+              inputMode="tel"
+              required
               className="capsule-text-input"
               placeholder={t.footer.inputPlaceholder}
-              value={leadInput}
-              onChange={(e) => setLeadInput(e.target.value)}
+              value={phoneInput}
+              onChange={(e) => {
+                // Autoriser uniquement les chiffres, espaces et tirets (aucun email)
+                setPhoneInput(e.target.value.replace(/[^0-9\s-]/g, ''));
+                if (sentSuccess) setSentSuccess(false);
+              }}
             />
-            <button type="submit" className="capsule-submit-action-btn">
-              <span>{t.footer.submitBtn}</span>
+            <button type="submit" className="capsule-submit-action-btn" disabled={isSending}>
+              <i className="fa-brands fa-whatsapp" style={{ marginRight: '0.4rem', fontSize: '1.05rem' }}></i>
+              <span>{isSending ? t.footer.sendingBtn : t.footer.submitBtn}</span>
             </button>
           </form>
+
+          {sentSuccess && (
+            <div
+              style={{
+                marginTop: '0.85rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                background: '#ecfdf5',
+                border: '1px solid #10b981',
+                color: '#065f46',
+                padding: '0.6rem 1.15rem',
+                borderRadius: '999px',
+                fontSize: '0.88rem',
+                fontWeight: 600,
+              }}
+            >
+              <i className="fa-solid fa-circle-check"></i>
+              <span>{t.footer.successMsg}</span>
+            </div>
+          )}
 
           <div className="footer-cta-partners-row reveal-grid">
             <div className="cta-partner-logo-item">
