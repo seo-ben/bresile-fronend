@@ -144,30 +144,30 @@ export const translations = {
       ],
     },
     testimonials: {
-      title: 'Ils ont franchi le pas vers le Brésil',
+      title: 'Comment nous avons conduit leurs parcours jusqu’à la réussite',
       subtitleHtml:
-        "Découvrez les retours d'expérience d'étudiants d'Afrique francophone qui ont concrétisé leur projet linguistique et universitaire avec <strong>Brasil·É</strong>.",
+        'Découvrez comment <strong>Brasil·É</strong> a pris en charge, structuré et mené chaque dossier étudiant de son pays d’origine jusqu’à son intégration effective au Brésil.',
       items: [
         {
-          name: 'Aminata K.',
-          country: 'Sénégal (Dakar)',
-          currentStatus: 'Admise en Master à l’Université de Brasília (UnB)',
+          name: 'Dossier Aminata K.',
+          country: 'Départ : Sénégal (Dakar) → Brasília',
+          currentStatus: 'Aboutissement : Admise en Master à l’Université de Brasília (UnB)',
           quote:
-            'Arrivée à Brasília sans parler un mot de portugais, j’ai atteint le niveau intermédiaire en 5 mois grâce aux cours intensifs quotidiens. L’équipe m’a accompagnée pour trouver mon logement et obtenir mon CPF brésilien. Aujourd’hui je débute mon Master en relations internationales.',
+            'Prise en charge sans aucun prérequis en portugais. Nous avons émis son attestation officielle en 48h pour son visa VITEM IV, organisé son accueil et son logement à Brasília ainsi que son CPF, puis assuré 5 mois d’immersion intensive quotidienne jusqu’à sa validation académique.',
         },
         {
-          name: 'Jean-Marc T.',
-          country: 'Côte d’Ivoire (Abidjan)',
-          currentStatus: 'Étudiant en Génie Civil à l’USP (São Paulo)',
+          name: 'Dossier Jean-Marc T.',
+          country: 'Départ : Côte d’Ivoire (Abidjan) → São Paulo',
+          currentStatus: 'Aboutissement : Intégré en Génie Civil à l’USP (São Paulo)',
           quote:
-            'J’ai débuté les cours du soir en ligne depuis Abidjan tout en terminant ma licence. Les professeurs brésiliens sont exceptionnels de patience. Quand je suis arrivé à São Paulo, j’étais déjà capable d’échanger en portugais. Mon attestation sous 48h a été acceptée dès le premier dépôt au consulat.',
+            'Mise en place d’un parcours hybride adapté : nous l’avons d’abord formé au Niveau A1 en cours du soir en ligne depuis Abidjan pendant sa licence, avant de constituer son dossier consulaire accepté dès le premier dépôt et d’organiser sa transition vers le Niveau A2 à São Paulo.',
         },
         {
-          name: 'Emmanuel M.',
-          country: 'Cameroun (Douala)',
-          currentStatus: 'Diplôme CELPE-Bras obtenu avec mention',
+          name: 'Dossier Emmanuel M.',
+          country: 'Départ : Cameroun (Douala) → Brésil',
+          currentStatus: 'Aboutissement : Diplôme d’État CELPE-Bras obtenu dès la 1ère session',
           quote:
-            'Ce qui a totalement rassuré mes parents, c’est la garantie contractuelle écrite de remboursement à 85%. Aucune autre école ne propose une telle sécurité financière. J’ai obtenu mon visa étudiant sans le moindre obstacle et j’ai réussi l’examen du CELPE-Bras du premier coup.',
+            'Sécurisation financière complète de sa famille grâce à notre garantie contractuelle écrite de remboursement à 85%. Nous avons supervisé toute sa procédure consulaire jusqu’à l’obtention du visa étudiant, puis encadré sa préparation intensive aux épreuves officielles du MEC.',
         },
       ],
     },
@@ -399,30 +399,30 @@ export const translations = {
       ],
     },
     testimonials: {
-      title: 'They took the leap to study in Brazil',
+      title: 'How we guided their pathways to success',
       subtitleHtml:
-        'Read stories from African students who achieved their language and university goals with <strong>Brasil·É</strong>.',
+        'See how <strong>Brasil·É</strong> structured, managed, and led each student file from their home country all the way to academic integration in Brazil.',
       items: [
         {
-          name: 'Aminata K.',
-          country: 'Senegal (Dakar)',
-          currentStatus: 'Admitted to Master’s at University of Brasília (UnB)',
+          name: 'Case Study: Aminata K.',
+          country: 'Origin: Senegal (Dakar) → Brasília',
+          currentStatus: 'Outcome: Admitted to Master’s at University of Brasília (UnB)',
           quote:
-            'Arriving in Brasília without speaking a word of Portuguese, I reached intermediate level in 5 months thanks to daily intensive classes. The team helped me find housing and get my Brazilian CPF. Today I am starting my Master’s in International Relations.',
+            'Onboarded with zero prior Portuguese knowledge. We issued her official certificate within 48h for her VITEM IV visa, coordinated airport pickup, housing, and CPF registration in Brasília, and delivered 5 months of daily intensive training up to university placement.',
         },
         {
-          name: 'Jean-Marc T.',
-          country: 'Ivory Coast (Abidjan)',
-          currentStatus: 'Civil Engineering student at USP (São Paulo)',
+          name: 'Case Study: Jean-Marc T.',
+          country: 'Origin: Ivory Coast (Abidjan) → São Paulo',
+          currentStatus: 'Outcome: Enrolled in Civil Engineering at USP (São Paulo)',
           quote:
-            'I started evening online classes from Abidjan while finishing my bachelor’s degree. The Brazilian teachers are incredibly patient. When I arrived in São Paulo, I could already converse in Portuguese. My 48h certificate was accepted on my first consulate appointment.',
+            'Designed a tailored hybrid pathway: we first trained him to Level A1 through evening online classes from Abidjan while he completed his degree, then prepared his consulate file—approved on the first appointment—and managed his transition to Level A2 in São Paulo.',
         },
         {
-          name: 'Emmanuel M.',
-          country: 'Cameroon (Douala)',
-          currentStatus: 'Passed CELPE-Bras Diploma with honors',
+          name: 'Case Study: Emmanuel M.',
+          country: 'Origin: Cameroon (Douala) → Brazil',
+          currentStatus: 'Outcome: Official CELPE-Bras State Diploma passed on 1st attempt',
           quote:
-            'What completely reassured my parents was the written 85% refund guarantee. No other school offers such financial security. I obtained my student visa smoothly and passed the CELPE-Bras exam on my first attempt.',
+            'Provided full financial security to his family through our written 85% refund guarantee clause. We supervised his entire consular application until student visa issuance, then guided his intensive preparation for the official MEC state exam.',
         },
       ],
     },
@@ -654,30 +654,30 @@ export const translations = {
       ],
     },
     testimonials: {
-      title: 'Eles realizaram o sonho de estudar no Brasil',
+      title: 'Como conduzimos cada trajetória até o resultado final',
       subtitleHtml:
-        'Conheça os depoimentos de estudantes africanos que concretizaram seu projeto linguístico e universitário com a <strong>Brasil·É</strong>.',
+        'Veja como a <strong>Brasil·É</strong> planejou, acompanhou e conduziu cada processo estudantil desde o país de origem até o ingresso efetivo no Brasil.',
       items: [
         {
-          name: 'Aminata K.',
-          country: 'Senegal (Dakar)',
-          currentStatus: 'Aprovada no Mestrado na Universidade de Brasília (UnB)',
+          name: 'Processo Aminata K.',
+          country: 'Origem: Senegal (Dakar) → Brasília',
+          currentStatus: 'Resultado: Aprovada no Mestrado na Universidade de Brasília (UnB)',
           quote:
-            'Cheguei a Brasília sem falar uma palavra de português e alcancei o nível intermediário em 5 meses graças às aulas intensivas diárias. A equipe me ajudou com moradia e CPF. Hoje estou iniciando meu Mestrado em Relações Internacionais.',
+            'Acolhimento sem conhecimento prévio de português. Emitimos sua declaração oficial em 48h para o visto VITEM IV, organizamos sua recepção, moradia e CPF em Brasília, e conduzimos 5 meses de imersão intensiva diária até a aprovação acadêmica.',
         },
         {
-          name: 'Jean-Marc T.',
-          country: 'Costa do Marfim (Abidjan)',
-          currentStatus: 'Estudante de Engenharia Civil na USP (São Paulo)',
+          name: 'Processo Jean-Marc T.',
+          country: 'Origem: Costa do Marfim (Abidjan) → São Paulo',
+          currentStatus: 'Resultado: Ingressou em Engenharia Civil na USP (São Paulo)',
           quote:
-            'Comecei as aulas noturnas online em Abidjan enquanto terminava minha graduação. Os professores brasileiros têm uma didática incrível. Quando cheguei a São Paulo, já conseguia conversar em português. Minha declaração em 48h foi aceita de primeira no consulado.',
+            'Estruturação de um percurso híbrido sob medida: iniciamos sua formação no Nível A1 em aulas noturnas online a partir de Abidjan durante sua graduação, preparamos seu dossiê consular aprovado de primeira e coordenamos sua transição presencial para São Paulo.',
         },
         {
-          name: 'Emmanuel M.',
-          country: 'Camarões (Douala)',
-          currentStatus: 'Certificado CELPE-Bras aprovado com distinção',
+          name: 'Processo Emmanuel M.',
+          country: 'Origem: Camarões (Douala) → Brasil',
+          currentStatus: 'Resultado: Certificado Oficial CELPE-Bras conquistado na 1ª edição',
           quote:
-            'O que deu total segurança aos meus pais foi a garantia contratual por escrito de reembolso de 85%. Nenhuma outra escola oferece essa proteção financeira. Consegui meu visto de estudante sem obstáculos e passei no CELPE-Bras na primeira tentativa.',
+            'Garantia financeira integral para sua família por meio da nossa cláusula contratual de reembolso de 85%. Supervisionamos todo o trâmite consular até a emissão do visto de estudante e conduzimos sua preparação intensiva para o exame oficial do MEC.',
         },
       ],
     },

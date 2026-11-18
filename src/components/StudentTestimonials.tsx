@@ -1,6 +1,8 @@
 import React from 'react';
 import { useLanguage } from '../i18n/LanguageContext';
 
+const caseInitials = ['AK', 'JT', 'EM'];
+
 export const StudentTestimonials: React.FC = () => {
   const { t } = useLanguage();
 
@@ -20,27 +22,18 @@ export const StudentTestimonials: React.FC = () => {
         <div className="testimonials-grid reveal-grid">
           {t.testimonials.items.map((item, idx) => (
             <div key={idx} className="testimonial-card-clean">
-              <div className="testimonial-stars-row">
-                {[...Array(5)].map((_, sIdx) => (
-                  <i key={sIdx} className="fa-solid fa-star text-amber-400"></i>
-                ))}
+              <div className="testimonial-quote" style={{ fontStyle: 'normal' }}>
+                {item.quote}
               </div>
-
-              <blockquote className="testimonial-quote">
-                « {item.quote} »
-              </blockquote>
 
               <div className="testimonial-author-block">
                 <div className="author-avatar-initials">
-                  {item.name
-                    .split(' ')
-                    .map((n) => n[0])
-                    .join('')}
+                  {caseInitials[idx] || 'BE'}
                 </div>
                 <div className="author-meta">
                   <div className="author-name-bold">{item.name}</div>
                   <div className="author-origin">
-                    <i className="fa-solid fa-earth-africa"></i> {item.country}
+                    <i className="fa-solid fa-route"></i> {item.country}
                   </div>
                   <div className="author-badge-status">
                     <i className="fa-solid fa-check text-emerald-500"></i> {item.currentStatus}
