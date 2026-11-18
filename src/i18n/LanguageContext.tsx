@@ -201,7 +201,7 @@ export const translations = {
     footer: {
       ctaHeadline: "Lancez dès aujourd'hui votre projet d'études au Brésil !",
       ctaSubhead:
-        'Votre attestation officielle d’inscription et votre accompagnement visa délivrés en moins de 48 heures.',
+        'Votre attestation officielle d’inscription et votre accompagnement visa délivrés.',
       inputPlaceholder: 'Entrez votre numéro WhatsApp (ex: 77 123 45 67)...',
       submitBtn: 'Envoyer mon numéro',
       sendingBtn: 'Envoi en cours...',
@@ -458,7 +458,7 @@ export const translations = {
     footer: {
       ctaHeadline: 'Start your study project in Brazil today!',
       ctaSubhead:
-        'Your official enrollment certificate and visa support delivered in under 48 hours.',
+        'Your official enrollment certificate and visa support delivered.',
       inputPlaceholder: 'Enter your WhatsApp number (e.g. 77 123 45 67)...',
       submitBtn: 'Send My Number',
       sendingBtn: 'Sending...',
@@ -715,7 +715,7 @@ export const translations = {
     footer: {
       ctaHeadline: 'Comece hoje mesmo o seu projeto de estudos no Brasil!',
       ctaSubhead:
-        'Sua declaração oficial de matrícula e assessoria de visto entregues em menos de 48 horas.',
+        'Sua declaração oficial de matrícula e assessoria de visto entregues.',
       inputPlaceholder: 'Digite seu número de WhatsApp (ex: 77 123 45 67)...',
       submitBtn: 'Enviar meu número',
       sendingBtn: 'Enviando...',
