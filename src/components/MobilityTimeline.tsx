@@ -4,37 +4,61 @@ import { useLanguage } from '../i18n/LanguageContext';
 export const MobilityTimeline: React.FC = () => {
   const { t } = useLanguage();
   const trackRef = useRef<HTMLDivElement>(null);
+  const stickyRef = useRef<HTMLDivElement>(null);
+  const [targetStep, setTargetStep] = useState<0 | 1 | 2 | 3>(0);
   const [activeStep, setActiveStep] = useState<0 | 1 | 2 | 3>(0);
 
   useEffect(() => {
     const handleScroll = () => {
       if (!trackRef.current) return;
       const rect = trackRef.current.getBoundingClientRect();
-      const trackHeight = trackRef.current.offsetHeight - window.innerHeight;
-      if (trackHeight <= 0) return;
+      const stickyHeight = stickyRef.current ? stickyRef.current.offsetHeight : 440;
+      const stickyTop = window.innerWidth <= 900 ? 60 : 85;
 
-      const progress = Math.min(Math.max(-rect.top / trackHeight, 0), 1);
+      // Distance exacte pendant laquelle le bloc sticky reste épinglé avant que la section suivante n'arrive juste en dessous
+      const scrollRunway = Math.max(trackRef.current.offsetHeight - stickyHeight - stickyTop, 400);
+      const scrolled = -rect.top + stickyTop;
+      const progress = Math.min(Math.max(scrolled / scrollRunway, 0), 1);
 
-      if (progress < 0.18) {
-        setActiveStep(0);
-      } else if (progress < 0.42) {
-        setActiveStep(1);
-      } else if (progress < 0.66) {
-        setActiveStep(2);
+      if (progress < 0.25) {
+        setTargetStep(0);
+      } else if (progress < 0.52) {
+        setTargetStep(1);
+      } else if (progress < 0.78) {
+        setTargetStep(2);
       } else {
-        setActiveStep(3);
+        setTargetStep(3);
       }
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('resize', handleScroll, { passive: true });
     handleScroll();
 
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+    };
   }, []);
+
+  // Progression séquentielle étape par étape (0 -> 1 -> 2 -> 3) pour ne jamais sauter les étapes 2 et 3 même en cas de scroll rapide
+  useEffect(() => {
+    if (activeStep === targetStep) return;
+
+    const timer = window.setTimeout(() => {
+      setActiveStep((prev) => {
+        if (prev < targetStep) return (prev + 1) as 0 | 1 | 2 | 3;
+        if (prev > targetStep) return (prev - 1) as 0 | 1 | 2 | 3;
+        return prev;
+      });
+    }, 240);
+
+    return () => window.clearTimeout(timer);
+  }, [activeStep, targetStep]);
 
   return (
     <section ref={trackRef} id="timeline" className="stacking-timeline-track reveal-section">
-      <div className="stacking-timeline-sticky">
+      <div ref={stickyRef} className="stacking-timeline-sticky">
         <div className="stacking-timeline-header">
           <h2 className="timeline-main-title reveal-left">
             {t.timeline.title}
