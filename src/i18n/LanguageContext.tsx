@@ -153,7 +153,7 @@ export const translations = {
           country: 'Départ : Sénégal (Dakar) → Brasília',
           currentStatus: 'Aboutissement : Admise en Master à l’Université de Brasília (UnB)',
           quote:
-            'Prise en charge sans aucun prérequis en portugais. Nous avons émis son attestation officielle en 48h pour son visa VITEM IV, organisé son accueil et son logement à Brasília ainsi que son CPF, puis assuré 5 mois d’immersion intensive quotidienne jusqu’à sa validation académique.',
+            'Prise en charge sans aucun prérequis en portugais. Nous avons émis son attestation officielle pour son visa VITEM IV, organisé son accueil et son logement à Brasília ainsi que son CPF, puis assuré 5 mois d’immersion intensive quotidienne jusqu’à sa validation académique.',
         },
         {
           name: 'Dossier Jean-Marc T.',
@@ -408,7 +408,7 @@ export const translations = {
           country: 'Origin: Senegal (Dakar) → Brasília',
           currentStatus: 'Outcome: Admitted to Master’s at University of Brasília (UnB)',
           quote:
-            'Onboarded with zero prior Portuguese knowledge. We issued her official certificate within 48h for her VITEM IV visa, coordinated airport pickup, housing, and CPF registration in Brasília, and delivered 5 months of daily intensive training up to university placement.',
+            'Onboarded with zero prior Portuguese knowledge. We issued her official certificate for her VITEM IV visa, coordinated airport pickup, housing, and CPF registration in Brasília, and delivered 5 months of daily intensive training up to university placement.',
         },
         {
           name: 'Case Study: Jean-Marc T.',
@@ -663,7 +663,7 @@ export const translations = {
           country: 'Origem: Senegal (Dakar) → Brasília',
           currentStatus: 'Resultado: Aprovada no Mestrado na Universidade de Brasília (UnB)',
           quote:
-            'Acolhimento sem conhecimento prévio de português. Emitimos sua declaração oficial em 48h para o visto VITEM IV, organizamos sua recepção, moradia e CPF em Brasília, e conduzimos 5 meses de imersão intensiva diária até a aprovação acadêmica.',
+            'Acolhimento sem conhecimento prévio de português. Emitimos sua declaração oficial para o visto VITEM IV, organizamos sua recepção, moradia e CPF em Brasília, e conduzimos 5 meses de imersão intensiva diária até a aprovação acadêmica.',
         },
         {
           name: 'Processo Jean-Marc T.',

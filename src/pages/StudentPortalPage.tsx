@@ -16,8 +16,12 @@ type TabKey =
 
 interface EnrollmentInfo {
   id: number;
+  level_id?: number;
   level_name: string;
   study_mode: string;
+  total_price?: number;
+  split_total_price?: number;
+  currency?: string;
   target_university?: string;
   city_name: string;
   city_state: string;
@@ -26,13 +30,13 @@ interface EnrollmentInfo {
   rhythm: string;
   enrolled_at?: string;
   installments?: Array<{
-    id: number;
+    id: number | null;
     installment_no: number;
-    due_date?: string;
+    due_date?: string | null;
     amount: number;
     currency: string;
     status: string;
-    paid_at?: string;
+    paid_at?: string | null;
   }>;
 }
 
@@ -153,7 +157,7 @@ const portalI18n: Record<Language, Record<string, string>> = {
     j2Title: 'Étape 2 : Premier Paiement (Niveau A1)',
     j2Tag: 'En cours de règlement',
     j2Desc:
-      "Paiement par carte Visa ou par virement bancaire. Choix entre paiement comptant ou en 3 tranches mensuelles. Dès réception, l'attestation officielle sous 48h est générée.",
+      "Paiement par carte Visa ou par virement bancaire. Choix entre paiement comptant ou en 3 tranches mensuelles. Dès réception, l'attestation officielle est générée.",
     j3Title: "Étape 3 : Début des Cours & Contrôle d'Assiduité",
     j3Tag: 'Après paiement',
     j3Desc:
@@ -437,7 +441,7 @@ const portalI18n: Record<Language, Record<string, string>> = {
     rhythmDay: 'Aulas diurnas (Manhã / Tarde)',
     actionTitle: 'Próxima ação necessária: Pagamento da 1ª parcela (Nível A1)',
     actionDesc:
-      'Seu processo de inscrição foi validado pela escola. Realize o pagamento da primeira parcela mensal (ou valor à vista) para emitir sua declaração oficial de matrícula em até 48h úteis.',
+      'Seu processo de inscrição foi validado pela escola. Realize o pagamento da primeira parcela mensal (ou valor à vista) para emitir sua declaração oficial de matrícula.',
     actionBtn: 'Pagar 1ª parcela',
     cardProgramCaption: 'Formação & Cidade',
     hostCityPrefix: 'Cidade de destino:',
@@ -533,7 +537,7 @@ const portalI18n: Record<Language, Record<string, string>> = {
     inst1Title: 'Parcela 1 (Mês 1)',
     inst1Badge: 'A pagar',
     inst1Due: 'Vencimento: Imediato (Validação)',
-    inst1Desc: 'Libera a emissão em até 48h da sua declaração oficial de matrícula.',
+    inst1Desc: 'Libera a emissão em até 48hda sua declaração oficial de matrícula.',
     stripeBtn: 'Pagar 170,00 € com Cartão (Stripe)',
     stripeLoading: 'Conectando ao Stripe...',
     inst2Title: 'Parcela 2 (Mês 2)',
@@ -583,6 +587,7 @@ export const StudentPortalPage: React.FC = () => {
   const pt = portalI18n[lang];
 
   const [user, setUser] = useState<StudentUser | null>(null);
+  const [adminOfferPrice, setAdminOfferPrice] = useState<{ total: number; currency: string } | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>('overview');
   const [paymentPlanChoice, setPaymentPlanChoice] = useState<'full' | 'installments'>('installments');
   const [isProcessingStripe, setIsProcessingStripe] = useState(false);
@@ -642,6 +647,24 @@ export const StudentPortalPage: React.FC = () => {
         })
         .catch(() => {});
     }
+
+    // Récupérer en direct les tarifs définis par l'admin dans Filament (Tarifs & Scolarités)
+    fetch(`${API_ENDPOINTS.academicLevels}?lang=${lang}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((payload) => {
+        if (payload?.data && Array.isArray(payload.data) && payload.data.length > 0) {
+          const firstLevel = payload.data[0];
+          const offers = firstLevel?.offers || [];
+          const inPersonOffer = offers.find((o: any) => o.study_mode === 'in_person_brazil') || offers[0];
+          if (inPersonOffer && Number(inPersonOffer.base_price) > 0) {
+            setAdminOfferPrice({
+              total: Number(inPersonOffer.base_price),
+              currency: inPersonOffer.currency || 'EUR',
+            });
+          }
+        }
+      })
+      .catch(() => {});
   }, [navigate, lang]);
 
   const handleLogout = () => {
@@ -650,7 +673,7 @@ export const StudentPortalPage: React.FC = () => {
     navigate('/connexion');
   };
 
-  const handleStripePayment = async (amount: number, description: string) => {
+  const handleStripePayment = async (amount: number, description: string, currency = 'EUR') => {
     setIsProcessingStripe(true);
     const token = localStorage.getItem('student_token');
     try {
@@ -664,7 +687,7 @@ export const StudentPortalPage: React.FC = () => {
         body: JSON.stringify({
           enrollment_id: latestEnrollment?.id || 85,
           amount: amount,
-          currency: 'EUR',
+          currency: currency,
           description: description,
         }),
       });
@@ -704,6 +727,51 @@ export const StudentPortalPage: React.FC = () => {
     latestEnrollment?.rhythm === 'evening'
       ? pt.rhythmEvening
       : pt.rhythmDay;
+
+  // Calcul dynamique des montants à partir des tarifs fixés par l'admin dans Filament (Tarifs & Scolarités)
+  const currencyCode = latestEnrollment?.currency || adminOfferPrice?.currency || 'EUR';
+  const totalPrice =
+    (latestEnrollment?.total_price && Number(latestEnrollment.total_price) > 0
+      ? Number(latestEnrollment.total_price)
+      : adminOfferPrice?.total) || 500;
+
+  const splitTotalPrice =
+    (latestEnrollment?.split_total_price && Number(latestEnrollment.split_total_price) > 0
+      ? Number(latestEnrollment.split_total_price)
+      : totalPrice);
+
+  const rawInstallments = latestEnrollment?.installments || [];
+  const defaultInst2 = Math.floor(splitTotalPrice / 3 / 5) * 5 || Math.round((splitTotalPrice / 3) * 100) / 100;
+  const defaultInst3 = defaultInst2;
+  const defaultInst1 = Math.round((splitTotalPrice - defaultInst2 - defaultInst3) * 100) / 100;
+
+  const inst1Amount = rawInstallments[0]?.amount ? Number(rawInstallments[0].amount) : defaultInst1;
+  const inst2Amount = rawInstallments[1]?.amount ? Number(rawInstallments[1].amount) : defaultInst2;
+  const inst3Amount = rawInstallments[2]?.amount ? Number(rawInstallments[2].amount) : defaultInst3;
+
+  const formatMoney = (val: number, curr = currencyCode, decimals = true) => {
+    if (curr === 'XOF' || curr === 'FCFA') {
+      return `${Math.round(val).toLocaleString('fr-FR')} FCFA`;
+    }
+    const formatted = decimals
+      ? val.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      : val.toLocaleString('fr-FR', { maximumFractionDigits: 2 });
+    return `${formatted} €`;
+  };
+
+  const payFullActionText =
+    lang === 'en'
+      ? `Pay Full Amount (${formatMoney(totalPrice)}) by Card (Stripe)`
+      : lang === 'pt'
+      ? `Pagar Valor Total (${formatMoney(totalPrice)}) com Cartão (Stripe)`
+      : `Payer la totalité (${formatMoney(totalPrice)}) par Carte (Stripe)`;
+
+  const payInst1ActionText =
+    lang === 'en'
+      ? `Pay ${formatMoney(inst1Amount)} by Card (Stripe)`
+      : lang === 'pt'
+      ? `Pagar ${formatMoney(inst1Amount)} com Cartão (Stripe)`
+      : `Payer ${formatMoney(inst1Amount)} par Carte (Stripe)`;
 
   return (
     <div className="portal-layout-direct">
@@ -1314,7 +1382,7 @@ export const StudentPortalPage: React.FC = () => {
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                       <strong style={{ fontSize: '0.92rem', color: '#0f172a' }}>{pt.payModeFullTitle}</strong>
-                      <span style={{ fontWeight: 800, color: '#059669', fontSize: '0.95rem' }}>500,00 €</span>
+                      <span style={{ fontWeight: 800, color: '#059669', fontSize: '0.95rem' }}>{formatMoney(totalPrice)}</span>
                     </div>
                     <div style={{ fontSize: '0.78rem', color: '#475569' }}>{pt.payModeFullSub}</div>
                   </button>
@@ -1334,7 +1402,9 @@ export const StudentPortalPage: React.FC = () => {
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                       <strong style={{ fontSize: '0.92rem', color: '#0f172a' }}>{pt.payModeSplitTitle}</strong>
-                      <span style={{ fontWeight: 800, color: '#ea580c', fontSize: '0.95rem' }}>170 € + 2×165 €</span>
+                      <span style={{ fontWeight: 800, color: '#ea580c', fontSize: '0.95rem' }}>
+                        {formatMoney(inst1Amount, currencyCode, false)} + 2×{formatMoney(inst2Amount, currencyCode, false)}
+                      </span>
                     </div>
                     <div style={{ fontSize: '0.78rem', color: '#475569' }}>{pt.payModeSplitSub}</div>
                   </button>
@@ -1347,7 +1417,7 @@ export const StudentPortalPage: React.FC = () => {
                     <span className="portal-inst-title">{pt.fullCardTitle}</span>
                     <span className="portal-status-tag">{pt.fullCardBadge}</span>
                   </div>
-                  <div className="portal-inst-amount" style={{ color: '#065f46' }}>500,00 €</div>
+                  <div className="portal-inst-amount" style={{ color: '#065f46' }}>{formatMoney(totalPrice)}</div>
                   <div className="portal-inst-due">{pt.fullCardDue}</div>
                   <div style={{ fontSize: '0.8rem', color: '#334155', lineHeight: 1.5, marginBottom: '0.5rem' }}>
                     {pt.fullCardDesc}
@@ -1357,10 +1427,10 @@ export const StudentPortalPage: React.FC = () => {
                     className="portal-action-btn"
                     style={{ marginTop: '0.5rem', width: '100%', background: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
                     disabled={isProcessingStripe}
-                    onClick={() => handleStripePayment(500, `${pt.fullCardTitle} — ${formationTitle}`)}
+                    onClick={() => handleStripePayment(totalPrice, `${pt.fullCardTitle} — ${formationTitle}`, currencyCode)}
                   >
                     <i className="fa-brands fa-stripe" style={{ fontSize: '1.4rem' }}></i>
-                    <span>{isProcessingStripe ? pt.stripeLoading : pt.stripeFullBtn}</span>
+                    <span>{isProcessingStripe ? pt.stripeLoading : payFullActionText}</span>
                   </button>
                 </div>
               ) : (
@@ -1376,7 +1446,7 @@ export const StudentPortalPage: React.FC = () => {
                         <span className="portal-inst-title">{pt.inst1Title}</span>
                         <span className="portal-badge-pending-tag">{pt.inst1Badge}</span>
                       </div>
-                      <div className="portal-inst-amount">170,00 €</div>
+                      <div className="portal-inst-amount">{formatMoney(inst1Amount)}</div>
                       <div className="portal-inst-due">{pt.inst1Due}</div>
                       <div style={{ fontSize: '0.75rem', color: '#475569' }}>
                         {pt.inst1Desc}
@@ -1386,10 +1456,10 @@ export const StudentPortalPage: React.FC = () => {
                         className="portal-action-btn"
                         style={{ marginTop: '0.5rem', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
                         disabled={isProcessingStripe}
-                        onClick={() => handleStripePayment(170, pt.inst1Title)}
+                        onClick={() => handleStripePayment(inst1Amount, pt.inst1Title, currencyCode)}
                       >
                         <i className="fa-brands fa-stripe" style={{ fontSize: '1.4rem' }}></i>
-                        <span>{isProcessingStripe ? pt.stripeLoading : pt.stripeBtn}</span>
+                        <span>{isProcessingStripe ? pt.stripeLoading : payInst1ActionText}</span>
                       </button>
                     </div>
 
@@ -1398,7 +1468,7 @@ export const StudentPortalPage: React.FC = () => {
                         <span className="portal-inst-title">{pt.inst2Title}</span>
                         <span style={{ fontSize: '0.74rem', color: '#94a3b8' }}>{pt.j5Tag}</span>
                       </div>
-                      <div className="portal-inst-amount">165,00 €</div>
+                      <div className="portal-inst-amount">{formatMoney(inst2Amount)}</div>
                       <div className="portal-inst-due">{pt.inst2Due}</div>
                       <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
                         {pt.inst2Desc}
@@ -1410,7 +1480,7 @@ export const StudentPortalPage: React.FC = () => {
                         <span className="portal-inst-title">{pt.inst3Title}</span>
                         <span style={{ fontSize: '0.74rem', color: '#94a3b8' }}>{pt.j5Tag}</span>
                       </div>
-                      <div className="portal-inst-amount">165,00 €</div>
+                      <div className="portal-inst-amount">{formatMoney(inst3Amount)}</div>
                       <div className="portal-inst-due">{pt.inst3Due}</div>
                       <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
                         {pt.inst3Desc}
