@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../i18n/LanguageContext';
 import { API_ENDPOINTS } from '../config/api';
+import { useSiteSettings } from './SiteSettingsContext';
 
 interface FooterProps {
   onOpenRegister: () => void;
@@ -25,6 +26,7 @@ const whatsappDialCodes = [
 
 export const Footer: React.FC<FooterProps> = ({ onOpenRegister }) => {
   const { lang, t } = useLanguage();
+  const siteSettings = useSiteSettings();
   const [dialCode, setDialCode] = useState('+221');
   const [phoneInput, setPhoneInput] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -122,22 +124,75 @@ export const Footer: React.FC<FooterProps> = ({ onOpenRegister }) => {
 
           {sentSuccess && (
             <div
+              onClick={() => setSentSuccess(false)}
               style={{
-                marginTop: '0.85rem',
-                display: 'inline-flex',
+                position: 'fixed',
+                inset: 0,
+                backgroundColor: 'rgba(15, 23, 42, 0.45)',
+                backdropFilter: 'blur(6px)',
+                WebkitBackdropFilter: 'blur(6px)',
+                display: 'flex',
                 alignItems: 'center',
-                gap: '0.5rem',
-                background: '#ecfdf5',
-                border: '1px solid #10b981',
-                color: '#065f46',
-                padding: '0.6rem 1.15rem',
-                borderRadius: '999px',
-                fontSize: '0.88rem',
-                fontWeight: 600,
+                justifyContent: 'center',
+                zIndex: 9999,
+                padding: '1rem',
               }}
             >
-              <i className="fa-solid fa-circle-check"></i>
-              <span>{t.footer.successMsg}</span>
+              <div
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  position: 'relative',
+                  background: '#ffffff',
+                  borderRadius: '24px',
+                  padding: '2.25rem 2rem 2rem',
+                  maxWidth: '400px',
+                  width: '100%',
+                  textAlign: 'center',
+                  boxShadow: '0 24px 48px rgba(15, 23, 42, 0.18)',
+                  border: '1px solid #e2e8f0',
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setSentSuccess(false)}
+                  aria-label="Fermer"
+                  style={{
+                    position: 'absolute',
+                    top: '0.85rem',
+                    right: '0.85rem',
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    border: 'none',
+                    background: '#f1f5f9',
+                    color: '#475569',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    fontSize: '0.95rem',
+                  }}
+                >
+                  <i className="fa-solid fa-xmark"></i>
+                </button>
+
+                <div
+                  style={{
+                    width: '84px',
+                    height: '84px',
+                    borderRadius: '50%',
+                    background: '#ecfdf5',
+                    color: '#059669',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '2.5rem',
+                    margin: '0.5rem auto',
+                  }}
+                >
+                  <i className="fa-solid fa-check"></i>
+                </div>
+              </div>
             </div>
           )}
 
@@ -166,29 +221,91 @@ export const Footer: React.FC<FooterProps> = ({ onOpenRegister }) => {
         <div className="footer-dark-inner">
           <div className="footer-grid-four-columns">
             <div className="footer-col-identity reveal-left">
-              <div className="footer-brand-title">
-                <span className="brand-primary-white">Brasil</span>
-                <span className="brand-dot-green">·</span>
-                <span className="brand-accent-green">É</span>
+              <div className="footer-brand-title" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                <img
+                  src={siteSettings.logo_url || '/logo.png'}
+                  alt={siteSettings.site_name}
+                  style={{ width: '32px', height: '32px', objectFit: 'contain', borderRadius: '8px' }}
+                />
+                {siteSettings.site_name === 'Brasil·É' ? (
+                  <span>
+                    <span className="brand-primary-white">Brasil</span>
+                    <span className="brand-dot-green">·</span>
+                    <span className="brand-accent-green">É</span>
+                  </span>
+                ) : (
+                  <span className="brand-primary-white">{siteSettings.site_name}</span>
+                )}
               </div>
 
               <p className="footer-identity-bio">
                 {t.footer.bio}
               </p>
 
-              <div className="footer-social-circles-list">
-                <a href="https://facebook.com" target="_blank" rel="noreferrer" className="footer-social-round-btn" aria-label="Facebook">
-                  <i className="fa-brands fa-facebook-f"></i>
-                </a>
-                <a href="https://tiktok.com" target="_blank" rel="noreferrer" className="footer-social-round-btn" aria-label="TikTok">
-                  <i className="fa-brands fa-tiktok"></i>
-                </a>
-                <a href="https://instagram.com" target="_blank" rel="noreferrer" className="footer-social-round-btn" aria-label="Instagram">
-                  <i className="fa-brands fa-instagram"></i>
-                </a>
-                <a href="https://linkedin.com" target="_blank" rel="noreferrer" className="footer-social-round-btn" aria-label="LinkedIn">
-                  <i className="fa-brands fa-linkedin-in"></i>
-                </a>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem', marginTop: '1rem' }}>
+                {siteSettings.contact_email && (
+                  <a
+                    href={`mailto:${siteSettings.contact_email}`}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.55rem',
+                      fontSize: '0.84rem',
+                      fontWeight: 600,
+                      color: '#334155',
+                      textDecoration: 'none',
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: '30px',
+                        height: '30px',
+                        borderRadius: '50%',
+                        background: '#f1f5f9',
+                        color: '#059669',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <i className="fa-solid fa-envelope" style={{ fontSize: '0.78rem' }}></i>
+                    </span>
+                    <span>{siteSettings.contact_email}</span>
+                  </a>
+                )}
+
+                {siteSettings.contact_phone && (
+                  <a
+                    href={`tel:${siteSettings.contact_phone.replace(/\s+/g, '')}`}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.55rem',
+                      fontSize: '0.84rem',
+                      fontWeight: 600,
+                      color: '#334155',
+                      textDecoration: 'none',
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: '30px',
+                        height: '30px',
+                        borderRadius: '50%',
+                        background: '#f1f5f9',
+                        color: '#059669',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <i className="fa-solid fa-phone" style={{ fontSize: '0.78rem' }}></i>
+                    </span>
+                    <span>{siteSettings.contact_phone}</span>
+                  </a>
+                )}
               </div>
             </div>
 
@@ -224,6 +341,21 @@ export const Footer: React.FC<FooterProps> = ({ onOpenRegister }) => {
                 </div>
 
                 <div className="campus-badge-pill" onClick={onOpenRegister}>
+                  <div className="campus-monogram-circle bg-emerald">RJ</div>
+                  <span className="campus-name-label">CAMPUS RIO DE JANEIRO</span>
+                </div>
+
+                <div className="campus-badge-pill" onClick={onOpenRegister}>
+                  <div className="campus-monogram-circle bg-teal">MG</div>
+                  <span className="campus-name-label">CAMPUS BELO HORIZONTE</span>
+                </div>
+
+                <div className="campus-badge-pill" onClick={onOpenRegister}>
+                  <div className="campus-monogram-circle bg-rose">RS</div>
+                  <span className="campus-name-label">CAMPUS PORTO ALEGRE</span>
+                </div>
+
+                <div className="campus-badge-pill" onClick={onOpenRegister}>
                   <div className="campus-monogram-circle bg-indigo">OL</div>
                   <span className="campus-name-label">{t.footer.campusOnline}</span>
                 </div>
@@ -235,7 +367,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenRegister }) => {
         <div className="footer-sub-bottom-bar">
           <div className="footer-sub-bottom-inner">
             <span className="footer-copy-text">
-              Copyright © 2026 Brasil·É
+              Copyright © 2026 {siteSettings.site_name}
             </span>
           </div>
         </div>

@@ -5,9 +5,13 @@ import {
   Eye,
   EyeOff,
   CheckCircle,
+  Upload,
+  FileCheck2,
+  X,
 } from 'lucide-react';
 import { API_ENDPOINTS } from '../config/api';
 import { useLanguage } from '../i18n/LanguageContext';
+import { useToast } from '../components/ToastContext';
 
 interface PartnerOption {
   sigle: string;
@@ -94,6 +98,7 @@ export const RegistrationPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { lang, t } = useLanguage();
+  const toast = useToast();
 
   const preselectedUniversity = searchParams.get('universite') || '';
   const preselectedLevel = searchParams.get('niveau') || 'Niveau A1 — Débutant';
@@ -102,12 +107,15 @@ export const RegistrationPage: React.FC = () => {
   // Form State
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [birthDate, setBirthDate] = useState('');
   const [email, setEmail] = useState('');
   const [dialCode, setDialCode] = useState('+221');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [country, setCountry] = useState('Sénégal');
   const [desiredLevel, setDesiredLevel] = useState(preselectedLevel);
+  const [previousLevelFile, setPreviousLevelFile] = useState<File | null>(null);
   const [studyMode, setStudyMode] = useState(preselectedMode);
+  const [studyPurpose, setStudyPurpose] = useState('etudes_superieures');
   const [cityChoice, setCityChoice] = useState('Brasília (Capitale)');
   const [targetUniversity, setTargetUniversity] = useState(preselectedUniversity);
   const [password, setPassword] = useState('');
@@ -118,7 +126,10 @@ export const RegistrationPage: React.FC = () => {
   const [cities, setCities] = useState<CityOption[]>(defaultCityOptions);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
+
+  // Déterminer si le niveau sélectionné est supérieur à A1 et quel niveau précédent justifier
+  const selectedLevelIdx = levels.findIndex((l) => l.name === desiredLevel || l.code === desiredLevel);
+  const requiredPreviousLevel = selectedLevelIdx > 0 ? levels[selectedLevelIdx - 1] : null;
 
   // Scroll to top on mount
   useEffect(() => {
@@ -190,7 +201,6 @@ export const RegistrationPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setErrorMsg('');
 
     try {
       const fullPhone = dialCode === '+' ? phoneNumber : `${dialCode} ${phoneNumber}`.trim();
@@ -199,23 +209,34 @@ export const RegistrationPage: React.FC = () => {
       const selectedLevelObj = levels.find((l) => l.name === desiredLevel || l.code === desiredLevel);
       const selectedCityObj = cities.find((c) => c.name === cityChoice || cityChoice.includes(c.name));
 
+      const formData = new FormData();
+      formData.append('first_name', firstName);
+      formData.append('last_name', lastName);
+      if (birthDate) formData.append('birth_date', birthDate);
+      formData.append('email', email);
+      formData.append('phone', fullPhone);
+      formData.append('dial_code', dialCode);
+      formData.append('phone_number', phoneNumber);
+      formData.append('password', password || 'Password123!');
+      formData.append('preferred_locale', lang);
+      if (selectedLevelObj?.id) formData.append('level_id', String(selectedLevelObj.id));
+      formData.append('level_choice', desiredLevel);
+      formData.append('study_mode', studyMode);
+      formData.append('study_purpose', studyPurpose);
+      if (!studyMode.includes('Ligne') && selectedCityObj?.id) {
+        formData.append('brazil_city_id', String(selectedCityObj.id));
+      }
+      formData.append('city_choice', studyMode.includes('Ligne') ? 'En ligne' : cityChoice);
+      formData.append('target_university', targetUniversity || 'Non spécifiée');
+      formData.append('country', country);
+      if (requiredPreviousLevel && previousLevelFile) {
+        formData.append('previous_level_certificate', previousLevelFile);
+      }
+
       const res = await fetch(API_ENDPOINTS.register, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({
-          first_name: firstName,
-          last_name: lastName,
-          email: email,
-          phone: fullPhone,
-          password: password || 'Password123!',
-          level_id: selectedLevelObj?.id,
-          level_choice: desiredLevel,
-          study_mode: studyMode,
-          brazil_city_id: studyMode.includes('Ligne') ? null : selectedCityObj?.id,
-          city_choice: studyMode.includes('Ligne') ? 'En ligne' : cityChoice,
-          target_university: targetUniversity || 'Non spécifiée',
-          country: country,
-        }),
+        headers: { Accept: 'application/json' },
+        body: formData,
       });
 
       const data = await res.json();
@@ -229,17 +250,17 @@ export const RegistrationPage: React.FC = () => {
         if (user) {
           localStorage.setItem('student_user', JSON.stringify(user));
         }
+        toast.success(t.auth.regSuccessTitle);
         setIsSuccess(true);
       } else {
         if (data?.message && (data.message.includes('already been taken') || data.message.includes('unique'))) {
-          setErrorMsg('Cette adresse e-mail est déjà associée à un compte. Veuillez vous connecter sur la page Connexion.');
+          toast.error('Cette adresse e-mail est déjà associée à un compte. Veuillez vous connecter sur la page Connexion.');
         } else {
-          setErrorMsg(data?.message || 'Une erreur est survenue lors de l’inscription. Veuillez vérifier vos données.');
+          toast.error(data?.message || 'Une erreur est survenue lors de l’inscription. Veuillez vérifier vos données.');
         }
       }
     } catch {
-      // Offline fallback
-      setIsSuccess(true);
+      toast.error('Impossible de contacter le serveur. Veuillez réessayer.');
     } finally {
       setIsSubmitting(false);
     }
@@ -296,8 +317,6 @@ export const RegistrationPage: React.FC = () => {
                 {t.auth.regSubtitle}
               </p>
 
-              {errorMsg && <div className="glass-error-badge">{errorMsg}</div>}
-
               {/* Registration Form */}
               <form onSubmit={handleSubmit} className="glass-actual-form">
                 {/* Row 1: Prénom & Nom */}
@@ -324,6 +343,38 @@ export const RegistrationPage: React.FC = () => {
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
                     />
+                  </div>
+                </div>
+
+                {/* Row 1b: Date de naissance & Objet d'étude */}
+                <div className="glass-form-row">
+                  <div className="glass-field-group">
+                    <label className="glass-label">{t.auth.birthDate}</label>
+                    <input
+                      type="date"
+                      required
+                      className="glass-input"
+                      value={birthDate}
+                      onChange={(e) => setBirthDate(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="glass-field-group">
+                    <label className="glass-label">{t.auth.studyPurpose}</label>
+                    <select
+                      className="glass-input glass-select"
+                      value={studyPurpose}
+                      onChange={(e) => setStudyPurpose(e.target.value)}
+                      required
+                    >
+                      <option value="etudes_superieures">{t.auth.purposeStudies}</option>
+                      <option value="business_affaires">{t.auth.purposeBusiness}</option>
+                      <option value="travail">{t.auth.purposeWork}</option>
+                      <option value="conversation">{t.auth.purposeConversation}</option>
+                      <option value="celpe_bras">{t.auth.purposeCelpe}</option>
+                      <option value="tourisme_immersion">{t.auth.purposeImmersion}</option>
+                      <option value="autre">{t.auth.purposeOther}</option>
+                    </select>
                   </div>
                 </div>
 
@@ -375,7 +426,10 @@ export const RegistrationPage: React.FC = () => {
                     <select
                       className="glass-input glass-select"
                       value={desiredLevel}
-                      onChange={(e) => setDesiredLevel(e.target.value)}
+                      onChange={(e) => {
+                        setDesiredLevel(e.target.value);
+                        setPreviousLevelFile(null);
+                      }}
                     >
                       {levels.map((lvl) => (
                         <option key={lvl.id || lvl.code} value={lvl.name}>
@@ -393,10 +447,73 @@ export const RegistrationPage: React.FC = () => {
                       onChange={(e) => setStudyMode(e.target.value)}
                     >
                       <option value="Présentiel au Brésil">{t.auth.modeInPerson}</option>
+                      <option value="Présentiel au Brésil (Visa Visiteur)">{t.auth.modeVisitor}</option>
                       <option value="100% En Ligne">{t.auth.modeOnline}</option>
                     </select>
                   </div>
                 </div>
+
+                {/* Champ conditionnel : justificatif du niveau précédent pour tout niveau supérieur à A1 */}
+                {requiredPreviousLevel && (
+                  <div className="glass-field-group">
+                    <label className="glass-label">
+                      {t.auth.prevLevelCertPrefix} {requiredPreviousLevel.code || requiredPreviousLevel.name} *
+                    </label>
+                    <label
+                      className={`glass-file-dropzone ${previousLevelFile ? 'has-file' : ''}`}
+                    >
+                      <input
+                        type="file"
+                        required
+                        accept=".pdf,.jpg,.jpeg,.png,.webp"
+                        className="glass-file-native-input"
+                        onChange={(e) => setPreviousLevelFile(e.target.files?.[0] || null)}
+                      />
+                      <div className="glass-file-dropzone-icon">
+                        {previousLevelFile ? (
+                          <FileCheck2 size={16} />
+                        ) : (
+                          <Upload size={16} />
+                        )}
+                      </div>
+                      <div className="glass-file-dropzone-text">
+                        {previousLevelFile ? (
+                          <>
+                            <span className="glass-file-name">{previousLevelFile.name}</span>
+                            <span className="glass-file-meta">
+                              {(previousLevelFile.size / 1024 / 1024).toFixed(2)} Mo
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="glass-file-cta">
+                              {lang === 'en'
+                                ? 'Click to upload your certificate'
+                                : lang === 'pt'
+                                ? 'Clique para enviar seu certificado'
+                                : 'Cliquez pour importer votre justificatif'}
+                            </span>
+                            <span className="glass-file-meta">{t.auth.prevLevelCertHint}</span>
+                          </>
+                        )}
+                      </div>
+                      {previousLevelFile && (
+                        <button
+                          type="button"
+                          className="glass-file-clear-btn"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setPreviousLevelFile(null);
+                          }}
+                          aria-label="Retirer le fichier"
+                        >
+                          <X size={15} />
+                        </button>
+                      )}
+                    </label>
+                  </div>
+                )}
 
                 {/* Row 4: Ville d'accueil & Université cible */}
                 <div className="glass-form-row">

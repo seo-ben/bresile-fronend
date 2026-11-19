@@ -1,7 +1,7 @@
 import React from 'react';
 import { useLanguage } from '../i18n/LanguageContext';
 
-const pointIcons = ['fa-file-signature', 'fa-building-columns', 'fa-shield-halved'];
+const pointIcons = ['fa-file-signature', 'fa-building-columns', 'fa-shield-halved', 'fa-credit-card'];
 
 export const TrustGuarantee: React.FC = () => {
   const { t } = useLanguage();

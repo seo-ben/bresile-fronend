@@ -21,7 +21,10 @@ export const API_ENDPOINTS = {
   register: `${API_BASE_URL}/api/v1/auth/register`,
   login: `${API_BASE_URL}/api/v1/auth/login`,
   me: `${API_BASE_URL}/api/v1/auth/me`,
+  updateProfile: `${API_BASE_URL}/api/v1/auth/profile`,
   stripeCheckout: `${API_BASE_URL}/api/v1/payments/stripe/checkout`,
   stripeVerify: `${API_BASE_URL}/api/v1/payments/stripe/verify`,
   whatsappLead: `${API_BASE_URL}/api/v1/leads/whatsapp`,
+  siteSettings: `${API_BASE_URL}/api/v1/site/settings`,
+  studentRequests: `${API_BASE_URL}/api/v1/student-requests`,
 } as const;

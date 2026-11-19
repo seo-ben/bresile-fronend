@@ -353,6 +353,129 @@
   cursor: pointer;
 }
 
+/* Custom Glassmorphism File Upload Dropzone */
+.glass-file-dropzone {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.45rem 0.75rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1.5px dashed rgba(100, 116, 139, 0.45);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.glass-file-dropzone:hover {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: #0f172a;
+}
+
+.glass-file-dropzone.has-file {
+  border-style: solid;
+  border-color: #10b981;
+  background: rgba(236, 253, 245, 0.88);
+}
+
+.glass-file-native-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.glass-file-dropzone-icon {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.06);
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.glass-file-dropzone.has-file .glass-file-dropzone-icon {
+  background: #d1fae5;
+  color: #059669;
+}
+
+.glass-file-dropzone-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.glass-file-cta,
+.glass-file-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.glass-file-dropzone.has-file .glass-file-name {
+  color: #065f46;
+}
+
+.glass-file-meta {
+  font-size: 0.7rem;
+  color: #64748b;
+  line-height: 1.2;
+}
+
+.glass-file-browse-pill {
+  flex-shrink: 0;
+  padding: 0.42rem 0.9rem;
+  border-radius: 9px;
+  background: #0f172a;
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  transition: background 0.15s ease;
+}
+
+.glass-file-dropzone:hover .glass-file-browse-pill {
+  background: #1e293b;
+}
+
+.glass-file-clear-btn {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid #a7f3d0;
+  background: #ffffff;
+  color: #047857;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.glass-file-clear-btn:hover {
+  background: #fee2e2;
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
 /* Saisie combinée indicatif pays + numéro de téléphone */
 .glass-phone-combined {
   display: flex;

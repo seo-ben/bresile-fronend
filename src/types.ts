@@ -1,4 +1,4 @@
-export type Currency = 'EUR' | 'XOF';
+export type Currency = 'EUR' | 'XOF' | 'BRL';
 
 export interface Level {
   id: number;

@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import './RegistrationPage.css';
 import { API_ENDPOINTS } from '../config/api';
 import { useLanguage } from '../i18n/LanguageContext';
+import { useToast } from '../components/ToastContext';
 import {
   Eye,
   EyeOff,
@@ -12,6 +13,7 @@ import {
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const toast = useToast();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -20,7 +22,6 @@ export const LoginPage: React.FC = () => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
   const [studentName, setStudentName] = useState('');
 
   // Scroll to top
@@ -31,7 +32,6 @@ export const LoginPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setErrorMsg('');
 
     try {
       const res = await fetch(API_ENDPOINTS.login, {
@@ -54,20 +54,16 @@ export const LoginPage: React.FC = () => {
         const name = user?.profile?.first_name || user?.first_name || 'Étudiant';
         setStudentName(name);
         setIsSuccess(true);
+        toast.success(`${t.auth.welcomeBack}, ${name} !`);
         // Transition fluide et directe vers le portail étudiant
         setTimeout(() => {
           navigate('/portail');
         }, 800);
       } else {
-        setErrorMsg(data?.message || 'Identifiants incorrects. Veuillez vérifier votre adresse e-mail et votre mot de passe.');
+        toast.error(data?.message || 'Identifiants incorrects. Veuillez vérifier votre adresse e-mail et votre mot de passe.');
       }
     } catch {
-      // Offline fallback: allow access
-      setStudentName('Étudiant');
-      setIsSuccess(true);
-      setTimeout(() => {
-        navigate('/portail');
-      }, 800);
+      toast.error('Impossible de contacter le serveur. Veuillez réessayer.');
     } finally {
       setIsSubmitting(false);
     }
@@ -116,8 +112,6 @@ export const LoginPage: React.FC = () => {
               <p className="glass-card-subtitle">
                 {t.auth.loginSubtitle}
               </p>
-
-              {errorMsg && <div className="glass-error-badge">{errorMsg}</div>}
 
               {/* Login Form */}
               <form onSubmit={handleSubmit} className="glass-actual-form">
@@ -172,7 +166,7 @@ export const LoginPage: React.FC = () => {
                     className="glass-forgot-link"
                     onClick={(e) => {
                       e.preventDefault();
-                      alert(t.auth.forgotAlert);
+                      toast.info(t.auth.forgotAlert);
                     }}
                   >
                     {t.auth.forgotPassword}

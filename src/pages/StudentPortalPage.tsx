@@ -3,6 +3,9 @@ import { useNavigate, Link } from 'react-router-dom';
 import './StudentPortalPage.css';
 import { API_ENDPOINTS } from '../config/api';
 import { useLanguage, type Language } from '../i18n/LanguageContext';
+import { useToast } from '../components/ToastContext';
+import { useSiteSettings } from '../components/SiteSettingsContext';
+import { openOfficialReceipt } from '../utils/receiptGenerator';
 
 type TabKey =
   | 'overview'
@@ -17,10 +20,18 @@ type TabKey =
 interface EnrollmentInfo {
   id: number;
   level_id?: number;
+  level_code?: string;
   level_name: string;
   study_mode: string;
+  service_fee?: number;
+  service_fee_paid?: boolean;
+  service_fee_paid_amount?: number;
+  service_fee_paid_at?: string | null;
   total_price?: number;
   split_total_price?: number;
+  total_paid?: number;
+  remaining_amount?: number;
+  is_fully_paid?: boolean;
   currency?: string;
   target_university?: string;
   city_name: string;
@@ -38,6 +49,31 @@ interface EnrollmentInfo {
     status: string;
     paid_at?: string | null;
   }>;
+  payments?: Array<{
+    id: number;
+    purpose?: string;
+    amount: number;
+    currency: string;
+    method: string;
+    status: string;
+    gateway_reference?: string | null;
+    confirmed_at?: string | null;
+  }>;
+}
+
+interface StudentRequestItem {
+  id: number;
+  reference: string;
+  type: string;
+  subject: string;
+  message?: string | null;
+  attachment_name?: string | null;
+  attachment_url?: string | null;
+  status: string;
+  decision_note?: string | null;
+  admin_attachment_url?: string | null;
+  resolved_at?: string | null;
+  created_at?: string | null;
 }
 
 interface StudentUser {
@@ -48,6 +84,7 @@ interface StudentUser {
   profile?: {
     first_name?: string;
     last_name?: string;
+    birth_date?: string | null;
     phone?: string;
     country_code?: string;
   };
@@ -56,6 +93,13 @@ interface StudentUser {
     id: number;
     status: string;
     visa_outcome: string;
+  }>;
+  official_documents?: Array<{
+    id: number;
+    title: string;
+    file_name?: string | null;
+    file_url?: string | null;
+    issued_at?: string | null;
   }>;
 }
 
@@ -174,7 +218,7 @@ const portalI18n: Record<Language, Record<string, string>> = {
     j6Tag: 'Étape finale',
     j6Desc:
       "Délivrance de l'ensemble des pièces consulaires pour le Visa VITEM IV. Garantie contractuelle de remboursement de 85% de la somme versée en cas de refus consulaire.",
-    payTabTitle: 'Plan de Règlement & Suivi des Échéances (Stripe & Virement)',
+    payTabTitle: 'Plan de Règlement & Suivi des Échéances (Carte Bancaire & Virement)',
     payModeLabel: 'Choisissez votre mode de règlement :',
     payModeFullTitle: 'Payer la totalité (Comptant — 1 seule fois)',
     payModeFullSub: 'Règlement intégral du niveau en un seul versement • Attestation immédiate',
@@ -185,15 +229,15 @@ const portalI18n: Record<Language, Record<string, string>> = {
     fullCardDue: 'Validation complète du niveau sans échéance mensuelle',
     fullCardDesc:
       "En réglant la totalité en une seule fois, vous êtes définitivement inscrit sur la liste des cours sans risque de suspension mensuelle et votre attestation officielle est délivrée sous 48h.",
-    stripeFullBtn: 'Payer la totalité (500,00 €) par Carte (Stripe)',
+    stripeFullBtn: 'Payer la totalité par Carte Bancaire',
     payWarning:
       "Règle d'exclusion automatique : Conformément au règlement de l'école, si la mensualité du mois suivant n'est pas réglée à la date d'échéance, le nom de l'étudiant est immédiatement retiré de la liste transmise aux enseignants jusqu'à régularisation.",
     inst1Title: 'Tranche 1 (Mois 1)',
     inst1Badge: 'À régler',
     inst1Due: 'Échéance : Immédiate (Validation)',
     inst1Desc: "Déclenche l'édition sous 48h de votre attestation officielle d'inscription.",
-    stripeBtn: 'Payer 170,00 € par Carte (Stripe)',
-    stripeLoading: 'Connexion à Stripe...',
+    stripeBtn: 'Payer par Carte Bancaire',
+    stripeLoading: 'Redirection sécurisée en cours...',
     inst2Title: 'Tranche 2 (Mois 2)',
     inst2Due: 'Échéance : +30 jours après rentrée',
     inst2Desc: "Maintien de l'inscription sur la liste des cours des enseignants.",
@@ -330,7 +374,7 @@ const portalI18n: Record<Language, Record<string, string>> = {
     j2Title: 'Step 2: First Tuition Payment (Level A1)',
     j2Tag: 'Awaiting payment',
     j2Desc:
-      'Payment by card (Stripe) or bank wire. Choose between full payment or 3 monthly installments. Once received, your official certificate is issued within 48h.',
+      'Payment by bank card or bank wire. Choose between full payment or 3 monthly installments. Once received, your official certificate is issued within 48h.',
     j3Title: 'Step 3: Start of Classes & Attendance Tracking',
     j3Tag: 'After payment',
     j3Desc:
@@ -347,7 +391,7 @@ const portalI18n: Record<Language, Record<string, string>> = {
     j6Tag: 'Final step',
     j6Desc:
       'Issuance of all consulate documents for the VITEM IV Visa. Contractual 85% refund guarantee in case of visa denial.',
-    payTabTitle: 'Payment Plan & Installment Schedule (Stripe & Bank Wire)',
+    payTabTitle: 'Payment Plan & Installment Schedule (Bank Card & Wire Transfer)',
     payModeLabel: 'Choose your payment option:',
     payModeFullTitle: 'Pay in Full (Single lump-sum payment)',
     payModeFullSub: 'Full level tuition in one payment • Immediate certificate issuance',
@@ -358,15 +402,15 @@ const portalI18n: Record<Language, Record<string, string>> = {
     fullCardDue: 'Complete level validation with no monthly due dates',
     fullCardDesc:
       'By paying the full tuition at once, your enrollment on class rosters is permanently secured with no monthly suspension risk, and your official certificate is issued within 48h.',
-    stripeFullBtn: 'Pay Full Amount (€500.00) by Card (Stripe)',
+    stripeFullBtn: 'Pay Full Amount by Bank Card',
     payWarning:
       'Automatic suspension rule: In accordance with school regulations, if the next monthly installment is not paid by the due date, the student is temporarily removed from teacher rosters until settled.',
     inst1Title: 'Installment 1 (Month 1)',
     inst1Badge: 'Due now',
     inst1Due: 'Due: Immediately (Upon validation)',
     inst1Desc: 'Triggers the issuance of your official enrollment certificate within 48h.',
-    stripeBtn: 'Pay €170.00 by Card (Stripe)',
-    stripeLoading: 'Connecting to Stripe...',
+    stripeBtn: 'Pay by Bank Card',
+    stripeLoading: 'Secure redirect in progress...',
     inst2Title: 'Installment 2 (Month 2)',
     inst2Due: 'Due: +30 days after start',
     inst2Desc: 'Maintains active enrollment on teacher class rosters.',
@@ -503,7 +547,7 @@ const portalI18n: Record<Language, Record<string, string>> = {
     j2Title: 'Etapa 2: Primeiro Pagamento (Nível A1)',
     j2Tag: 'Em aberto',
     j2Desc:
-      'Pagamento por cartão (Stripe) ou transferência bancária. Opção à vista ou em 3 parcelas mensais. Após confirmação, a declaração oficial é gerada em até 48h.',
+      'Pagamento por cartão bancário ou transferência bancária. Opção à vista ou em 3 parcelas mensais. Após confirmação, a declaração oficial é gerada em até 48h.',
     j3Title: 'Etapa 3: Início das Aulas & Controle de Frequência',
     j3Tag: 'Após pagamento',
     j3Desc:
@@ -520,7 +564,7 @@ const portalI18n: Record<Language, Record<string, string>> = {
     j6Tag: 'Etapa final',
     j6Desc:
       'Emissão de toda a documentação consular para o Visto VITEM IV. Garantia contratual de reembolso de 85% em caso de recusa consular.',
-    payTabTitle: 'Plano de Pagamento & Controle de Parcelas (Stripe & Transferência)',
+    payTabTitle: 'Plano de Pagamento & Controle de Parcelas (Cartão Bancário & Transferência)',
     payModeLabel: 'Escolha sua forma de pagamento:',
     payModeFullTitle: 'Pagar o valor total (À vista — parcela única)',
     payModeFullSub: 'Quitação integral do nível de uma só vez • Declaração imediata',
@@ -531,15 +575,15 @@ const portalI18n: Record<Language, Record<string, string>> = {
     fullCardDue: 'Validação completa do nível sem mensalidades futuras',
     fullCardDesc:
       'Ao quitar o valor total de uma só vez, sua matrícula fica garantida durante todo o nível sem risco de suspensão mensal e sua declaração oficial é emitida em até 48h.',
-    stripeFullBtn: 'Pagar Valor Total (500,00 €) com Cartão (Stripe)',
+    stripeFullBtn: 'Pagar Valor Total com Cartão Bancário',
     payWarning:
       'Regra de suspensão automática: Conforme o regulamento escolar, caso a parcela mensal seguinte não seja quitada até o vencimento, o nome do estudante é temporariamente retirado da lista de presença até a regularização.',
     inst1Title: 'Parcela 1 (Mês 1)',
     inst1Badge: 'A pagar',
     inst1Due: 'Vencimento: Imediato (Validação)',
-    inst1Desc: 'Libera a emissão em até 48hda sua declaração oficial de matrícula.',
-    stripeBtn: 'Pagar 170,00 € com Cartão (Stripe)',
-    stripeLoading: 'Conectando ao Stripe...',
+    inst1Desc: 'Libera a emissão em até 48h da sua declaração oficial de matrícula.',
+    stripeBtn: 'Pagar com Cartão Bancário',
+    stripeLoading: 'Redirecionando com segurança...',
     inst2Title: 'Parcela 2 (Mês 2)',
     inst2Due: 'Vencimento: +30 dias após início',
     inst2Desc: 'Manutenção da matrícula ativa na lista dos professores.',
@@ -584,14 +628,180 @@ const portalI18n: Record<Language, Record<string, string>> = {
 export const StudentPortalPage: React.FC = () => {
   const navigate = useNavigate();
   const { lang } = useLanguage();
+  const toast = useToast();
+  const siteSettings = useSiteSettings();
   const pt = portalI18n[lang];
 
   const [user, setUser] = useState<StudentUser | null>(null);
   const [adminOfferPrice, setAdminOfferPrice] = useState<{ total: number; currency: string } | null>(null);
-  const [activeTab, setActiveTab] = useState<TabKey>('overview');
+  const [activeTab, setActiveTabState] = useState<TabKey>(() => {
+    const validTabs: TabKey[] = ['overview', 'profile', 'journey', 'payments', 'courses', 'visa', 'requests', 'refund'];
+    if (typeof window !== 'undefined') {
+      const urlTab = new URLSearchParams(window.location.search).get('tab') as TabKey | null;
+      if (urlTab && validTabs.includes(urlTab)) return urlTab;
+      const savedTab = sessionStorage.getItem('student_portal_active_tab') as TabKey | null;
+      if (savedTab && validTabs.includes(savedTab)) return savedTab;
+    }
+    return 'overview';
+  });
+
+  const setActiveTab = (tab: TabKey) => {
+    setActiveTabState(tab);
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('student_portal_active_tab', tab);
+      const url = new URL(window.location.href);
+      if (tab === 'overview') {
+        url.searchParams.delete('tab');
+      } else {
+        url.searchParams.set('tab', tab);
+      }
+      window.history.replaceState({}, document.title, `${url.pathname}${url.search}`);
+    }
+  };
+
   const [paymentPlanChoice, setPaymentPlanChoice] = useState<'full' | 'installments'>('installments');
   const [isProcessingStripe, setIsProcessingStripe] = useState(false);
-  const [stripeSuccessMsg, setStripeSuccessMsg] = useState('');
+
+  // Mode édition des informations personnelles
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [editFirstName, setEditFirstName] = useState('');
+  const [editLastName, setEditLastName] = useState('');
+  const [editBirthDate, setEditBirthDate] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editCountryCode, setEditCountryCode] = useState('');
+  const [editStudyPurpose, setEditStudyPurpose] = useState('etudes_superieures');
+  const [editRhythm, setEditRhythm] = useState<'day' | 'evening'>('day');
+
+  const startEditProfile = () => {
+    setEditFirstName(user?.profile?.first_name || '');
+    setEditLastName(user?.profile?.last_name || '');
+    setEditBirthDate(user?.profile?.birth_date ? String(user.profile.birth_date).slice(0, 10) : '');
+    setEditPhone(user?.profile?.phone || '');
+    setEditCountryCode(user?.profile?.country_code || '');
+    setEditStudyPurpose((latestEnrollment as any)?.study_purpose || 'etudes_superieures');
+    setEditRhythm(latestEnrollment?.rhythm === 'evening' ? 'evening' : 'day');
+    setIsEditingProfile(true);
+  };
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const token = localStorage.getItem('student_token');
+    if (!token) return;
+
+    setIsSavingProfile(true);
+    try {
+      const res = await fetch(API_ENDPOINTS.updateProfile, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          first_name: editFirstName.trim(),
+          last_name: editLastName.trim(),
+          birth_date: editBirthDate || null,
+          phone: editPhone.trim(),
+          country_code: editCountryCode.trim(),
+          study_purpose: editStudyPurpose,
+          rhythm: editRhythm,
+        }),
+      });
+      const payload = await res.json();
+      if (res.ok && payload?.data) {
+        setUser(payload.data);
+        localStorage.setItem('student_user', JSON.stringify(payload.data));
+        setIsEditingProfile(false);
+        toast.success(
+          lang === 'en'
+            ? 'Your profile has been updated successfully.'
+            : lang === 'pt'
+            ? 'Suas informações foram atualizadas com sucesso.'
+            : 'Vos informations ont été mises à jour avec succès.'
+        );
+      } else {
+        toast.error(payload?.message || 'Erreur lors de la mise à jour de vos informations.');
+      }
+    } catch {
+      toast.error('Impossible de contacter le serveur.');
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
+  // État pour l'onglet "Mes Demandes" (envoi avec pièce jointe + retours admin)
+  const [studentRequests, setStudentRequests] = useState<StudentRequestItem[]>([]);
+  const [reqType, setReqType] = useState<'a1_brazil' | 'city_change' | 'offer_access' | 'other'>('other');
+  const [reqSubject, setReqSubject] = useState('');
+  const [reqMessage, setReqMessage] = useState('');
+  const [reqFile, setReqFile] = useState<File | null>(null);
+  const [isSendingReq, setIsSendingReq] = useState(false);
+
+  const fetchStudentRequests = () => {
+    const token = localStorage.getItem('student_token');
+    if (!token) return;
+    fetch(API_ENDPOINTS.studentRequests, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/json',
+      },
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((payload) => {
+        if (Array.isArray(payload?.data)) {
+          setStudentRequests(payload.data);
+        }
+      })
+      .catch(() => {});
+  };
+
+  const handleCreateRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const token = localStorage.getItem('student_token');
+    if (!token || !reqSubject.trim() || !reqMessage.trim()) return;
+
+    setIsSendingReq(true);
+    try {
+      const fd = new FormData();
+      fd.append('type', reqType);
+      fd.append('subject', reqSubject.trim());
+      fd.append('message', reqMessage.trim());
+      if (reqFile) {
+        fd.append('attachment', reqFile);
+      }
+
+      const res = await fetch(API_ENDPOINTS.studentRequests, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+        },
+        body: fd,
+      });
+
+      const payload = await res.json();
+      if (res.ok && payload?.data) {
+        setStudentRequests((prev) => [payload.data, ...prev]);
+        setReqSubject('');
+        setReqMessage('');
+        setReqFile(null);
+        toast.success(
+          lang === 'en'
+            ? 'Your request has been sent to the administration.'
+            : lang === 'pt'
+            ? 'Sua solicitação foi enviada à administração.'
+            : 'Votre demande a bien été transmise à l’administration.'
+        );
+      } else {
+        toast.error(payload?.message || 'Erreur lors de l’envoi de votre demande.');
+      }
+    } catch {
+      toast.error('Impossible de contacter le serveur.');
+    } finally {
+      setIsSendingReq(false);
+    }
+  };
 
   useEffect(() => {
     const token = localStorage.getItem('student_token');
@@ -610,28 +820,8 @@ export const StudentPortalPage: React.FC = () => {
       }
     }
 
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('payment') === 'success' && params.get('session_id') && token) {
-      const sessionId = params.get('session_id')!;
-      fetch(API_ENDPOINTS.stripeVerify, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ session_id: sessionId }),
-      })
-        .then((res) => res.json())
-        .then(() => {
-          setStripeSuccessMsg('Stripe OK');
-        })
-        .catch(() => {});
-    } else if (params.get('payment') === 'simulation') {
-      setStripeSuccessMsg('Stripe OK');
-    }
-
-    if (token) {
+    const refreshStudentProfile = () => {
+      if (!token) return;
       fetch(`${API_ENDPOINTS.me}?lang=${lang}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -646,7 +836,68 @@ export const StudentPortalPage: React.FC = () => {
           }
         })
         .catch(() => {});
+    };
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('payment') === 'success' && params.get('session_id') && token) {
+      const sessionId = params.get('session_id')!;
+      setActiveTab('payments');
+      fetch(API_ENDPOINTS.stripeVerify, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ session_id: sessionId }),
+      })
+        .then((res) => res.json())
+        .then((payload) => {
+          const paidAmount = Number(payload?.data?.payment?.amount || 0);
+          const paidCurr = payload?.data?.payment?.currency || 'EUR';
+          const amountSuffix = paidAmount > 0 ? ` (${formatMoney(paidAmount, paidCurr)})` : '';
+          toast.success(
+            lang === 'en'
+              ? `Payment${amountSuffix} confirmed successfully! Your payment schedule has been updated.`
+              : lang === 'pt'
+              ? `Pagamento${amountSuffix} confirmado com sucesso! Seu cronograma financeiro foi atualizado.`
+              : `Paiement${amountSuffix} confirmé avec succès ! Votre échéancier a été mis à jour.`,
+            6000
+          );
+          // Recharger immédiatement les données à jour depuis le serveur après validation du paiement
+          refreshStudentProfile();
+          // Nettoyer les paramètres de paiement tout en gardant l'onglet Paiements actif
+          window.history.replaceState({}, document.title, `${window.location.pathname}?tab=payments`);
+        })
+        .catch(() => {
+          toast.error('Impossible de vérifier le paiement auprès du serveur.');
+          refreshStudentProfile();
+        });
+    } else if (params.get('payment') === 'cancelled') {
+      toast.error(
+        lang === 'en'
+          ? 'Card payment was cancelled.'
+          : lang === 'pt'
+          ? 'O pagamento com cartão foi cancelado.'
+          : 'Le paiement par carte a été annulé.'
+      );
+      window.history.replaceState({}, document.title, window.location.pathname);
+      refreshStudentProfile();
+    } else if (params.get('payment') === 'simulation') {
+      toast.success(
+        lang === 'en'
+          ? 'Payment confirmed! Your enrollment file is now active.'
+          : lang === 'pt'
+          ? 'Pagamento confirmado! Seu processo está ativo.'
+          : 'Paiement validé avec succès ! Votre dossier est maintenant actif.',
+        6000
+      );
+      refreshStudentProfile();
+    } else {
+      refreshStudentProfile();
     }
+
+    fetchStudentRequests();
 
     // Récupérer en direct les tarifs définis par l'admin dans Filament (Tarifs & Scolarités)
     fetch(`${API_ENDPOINTS.academicLevels}?lang=${lang}`)
@@ -670,10 +921,16 @@ export const StudentPortalPage: React.FC = () => {
   const handleLogout = () => {
     localStorage.removeItem('student_token');
     localStorage.removeItem('student_user');
+    sessionStorage.removeItem('student_portal_active_tab');
     navigate('/connexion');
   };
 
-  const handleStripePayment = async (amount: number, description: string, currency = 'EUR') => {
+  const handleStripePayment = async (
+    amount: number,
+    description: string,
+    currency = 'EUR',
+    purpose: 'service_fee' | 'level_fee' = 'level_fee'
+  ) => {
     setIsProcessingStripe(true);
     const token = localStorage.getItem('student_token');
     try {
@@ -689,6 +946,7 @@ export const StudentPortalPage: React.FC = () => {
           amount: amount,
           currency: currency,
           description: description,
+          purpose: purpose,
         }),
       });
 
@@ -696,10 +954,10 @@ export const StudentPortalPage: React.FC = () => {
       if (data?.data?.checkout_url) {
         window.location.href = data.data.checkout_url;
       } else {
-        alert(data?.message || 'Stripe error');
+        toast.error(data?.message || 'Erreur lors de l’initialisation du paiement par carte.');
       }
     } catch {
-      alert('Stripe error');
+      toast.error('Impossible de contacter le serveur de paiement sécurisé.');
     } finally {
       setIsProcessingStripe(false);
     }
@@ -720,6 +978,12 @@ export const StudentPortalPage: React.FC = () => {
   const studyModeLabel =
     latestEnrollment?.study_mode === 'remote_home_country'
       ? pt.modeRemote
+      : latestEnrollment?.study_mode === 'visitor_visa_brazil'
+      ? lang === 'en'
+        ? 'In-Person in Brazil (Visitor Visa)'
+        : lang === 'pt'
+        ? 'Presencial no Brasil (Visto de Visitante)'
+        : 'Présentiel au Brésil (Visa Visiteur)'
       : pt.modeBrazil;
   const cityName = latestEnrollment?.city_name || 'Brasília';
   const cityState = latestEnrollment?.city_state || 'DF';
@@ -730,6 +994,10 @@ export const StudentPortalPage: React.FC = () => {
 
   // Calcul dynamique des montants à partir des tarifs fixés par l'admin dans Filament (Tarifs & Scolarités)
   const currencyCode = latestEnrollment?.currency || adminOfferPrice?.currency || 'EUR';
+  const serviceFee =
+    latestEnrollment?.service_fee !== undefined ? Number(latestEnrollment.service_fee) : 150;
+  const serviceFeePaid = Boolean(latestEnrollment?.service_fee_paid) || serviceFee <= 0;
+  const serviceFeePaidAt = latestEnrollment?.service_fee_paid_at || null;
   const totalPrice =
     (latestEnrollment?.total_price && Number(latestEnrollment.total_price) > 0
       ? Number(latestEnrollment.total_price)
@@ -749,9 +1017,81 @@ export const StudentPortalPage: React.FC = () => {
   const inst2Amount = rawInstallments[1]?.amount ? Number(rawInstallments[1].amount) : defaultInst2;
   const inst3Amount = rawInstallments[2]?.amount ? Number(rawInstallments[2].amount) : defaultInst3;
 
+  const inst1Status = rawInstallments[0]?.status || 'pending';
+  const inst2Status = rawInstallments[1]?.status || 'pending';
+  const inst3Status = rawInstallments[2]?.status || 'pending';
+  const paidInstallmentsCount = [inst1Status, inst2Status, inst3Status].filter((s) => s === 'paid').length;
+
+  const totalPaid = Number(latestEnrollment?.total_paid || 0);
+  const remainingAmount =
+    latestEnrollment?.remaining_amount !== undefined
+      ? Number(latestEnrollment.remaining_amount)
+      : Math.max(0, totalPrice - totalPaid);
+  const isFullyPaid = Boolean(latestEnrollment?.is_fully_paid) || (totalPaid > 0 && remainingAmount <= 0.5);
+  const hasPaidAtLeastOne = totalPaid > 0 || inst1Status === 'paid' || latestEnrollment?.status === 'active';
+
+  // Verrouiller le mode de règlement de scolarité dès que le 1er paiement de scolarité est effectué
+  const confirmedPaymentsList = (latestEnrollment?.payments || []).filter((p) => p.purpose !== 'service_fee');
+  const firstPaymentAmount = confirmedPaymentsList.length > 0 ? Number(confirmedPaymentsList[0].amount || 0) : 0;
+  const lockedPlan: 'full' | 'installments' | null =
+    confirmedPaymentsList.length > 0
+      ? firstPaymentAmount >= totalPrice - 0.5
+        ? 'full'
+        : 'installments'
+      : totalPaid > 0
+      ? totalPaid >= totalPrice - 0.5
+        ? 'full'
+        : 'installments'
+      : null;
+
+  const effectivePaymentPlan: 'full' | 'installments' = lockedPlan ?? paymentPlanChoice;
+  const levelCodeLabel = latestEnrollment?.level_code || formationTitle;
+
+  const latestVisa = user?.visa_applications && user.visa_applications.length > 0
+    ? user.visa_applications[user.visa_applications.length - 1]
+    : null;
+  const hasOfficialDocs = (user?.official_documents?.length || 0) > 0;
+  const isCompletedEnrollment = latestEnrollment?.status === 'completed' || latestEnrollment?.status === 'validated';
+  const isVisaGranted = latestVisa?.visa_outcome === 'granted';
+  const isVisaActive = Boolean(latestVisa && (latestVisa.status !== 'draft' || hasOfficialDocs || isFullyPaid));
+
+  const nextLevelMap: Record<string, string> = {
+    A1: 'A2',
+    A2: 'B1',
+    B1: 'B2',
+    B2: 'CELPE-Bras',
+    'CELPE-Bras': 'Université au Brésil',
+  };
+  const nextLevelCode = nextLevelMap[levelCodeLabel] || 'Niveau supérieur';
+
+  // Statuts dynamiques des 6 étapes du parcours
+  const step2Done = hasPaidAtLeastOne;
+  const step3Done = isCompletedEnrollment;
+  const step3Active = step2Done && !step3Done;
+  const step4Done = isCompletedEnrollment;
+  const step5Done = isFullyPaid && isCompletedEnrollment;
+  const step6Done = isVisaGranted;
+  const step6Active = !step6Done && (isVisaActive || isFullyPaid);
+  const nextPendingInstallmentNo =
+    inst1Status !== 'paid' ? 1 : inst2Status !== 'paid' ? 2 : inst3Status !== 'paid' ? 3 : null;
+  const nextPendingAmount =
+    nextPendingInstallmentNo === 1
+      ? inst1Amount
+      : nextPendingInstallmentNo === 2
+      ? inst2Amount
+      : nextPendingInstallmentNo === 3
+      ? inst3Amount
+      : 0;
+
   const formatMoney = (val: number, curr = currencyCode, decimals = true) => {
     if (curr === 'XOF' || curr === 'FCFA') {
       return `${Math.round(val).toLocaleString('fr-FR')} FCFA`;
+    }
+    if (curr === 'BRL' || curr === 'R$') {
+      const formattedBrl = decimals
+        ? val.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        : val.toLocaleString('fr-FR', { maximumFractionDigits: 2 });
+      return `R$ ${formattedBrl}`;
     }
     const formatted = decimals
       ? val.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -761,27 +1101,38 @@ export const StudentPortalPage: React.FC = () => {
 
   const payFullActionText =
     lang === 'en'
-      ? `Pay Full Amount (${formatMoney(totalPrice)}) by Card (Stripe)`
+      ? `Pay Full Amount (${formatMoney(totalPrice)}) by Bank Card`
       : lang === 'pt'
-      ? `Pagar Valor Total (${formatMoney(totalPrice)}) com Cartão (Stripe)`
-      : `Payer la totalité (${formatMoney(totalPrice)}) par Carte (Stripe)`;
+      ? `Pagar Valor Total (${formatMoney(totalPrice)}) com Cartão Bancário`
+      : `Payer la totalité (${formatMoney(totalPrice)}) par Carte Bancaire`;
 
   const payInst1ActionText =
     lang === 'en'
-      ? `Pay ${formatMoney(inst1Amount)} by Card (Stripe)`
+      ? `Pay ${formatMoney(inst1Amount)} by Bank Card`
       : lang === 'pt'
-      ? `Pagar ${formatMoney(inst1Amount)} com Cartão (Stripe)`
-      : `Payer ${formatMoney(inst1Amount)} par Carte (Stripe)`;
+      ? `Pagar ${formatMoney(inst1Amount)} com Cartão Bancário`
+      : `Payer ${formatMoney(inst1Amount)} par Carte Bancaire`;
 
   return (
     <div className="portal-layout-direct">
       {/* 1. SIDEBAR */}
       <aside className="portal-sidebar-direct">
         <div className="portal-sidebar-header">
-          <Link to="/" className="portal-brand-link">
-            <span>Brasil</span>
-            <span className="dot">·</span>
-            <span>É</span>
+          <Link to="/" className="portal-brand-link" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <img
+              src={siteSettings.logo_url || '/logo.png'}
+              alt={siteSettings.site_name}
+              style={{ width: '26px', height: '26px', objectFit: 'contain', borderRadius: '6px' }}
+            />
+            {siteSettings.site_name === 'Brasil·É' ? (
+              <span>
+                <span>Brasil</span>
+                <span className="dot">·</span>
+                <span>É</span>
+              </span>
+            ) : (
+              <span>{siteSettings.site_name}</span>
+            )}
           </Link>
           <span className="portal-brand-badge">{pt.badgePortal}</span>
         </div>
@@ -986,26 +1337,92 @@ export const StudentPortalPage: React.FC = () => {
           {/* ONGLET 1 : OVERVIEW */}
           {activeTab === 'overview' && (
             <>
-              <div className="portal-action-banner">
-                <div className="portal-action-content">
-                  <i className="fa-solid fa-circle-exclamation portal-action-icon"></i>
-                  <div>
-                    <div className="portal-action-title">
-                      {pt.actionTitle}
-                    </div>
-                    <div className="portal-action-desc">
-                      {pt.actionDesc}
+              {isFullyPaid ? (
+                <div className="portal-action-banner" style={{ background: '#ecfdf5', borderColor: '#a7f3d0' }}>
+                  <div className="portal-action-content">
+                    <i className="fa-solid fa-circle-check portal-action-icon" style={{ color: '#059669' }}></i>
+                    <div>
+                      <div className="portal-action-title" style={{ color: '#065f46' }}>
+                        {lang === 'en'
+                          ? `Tuition Fully Paid (${formationTitle})`
+                          : lang === 'pt'
+                          ? `Mensalidade totalmente quitada (${formationTitle})`
+                          : `Scolarité intégralement réglée (${formationTitle})`}
+                      </div>
+                      <div className="portal-action-desc" style={{ color: '#047857' }}>
+                        {lang === 'en'
+                          ? 'Your official enrollment file is active and your certificate is being issued.'
+                          : lang === 'pt'
+                          ? 'Sua matrícula oficial está ativa e sua declaração está sendo emitida.'
+                          : 'Votre inscription officielle est active et votre attestation est en cours d’émission.'}
+                      </div>
                     </div>
                   </div>
+                  <button
+                    type="button"
+                    className="portal-action-btn"
+                    style={{ background: '#059669' }}
+                    onClick={() => setActiveTab('payments')}
+                  >
+                    <i className="fa-solid fa-receipt"></i> {lang === 'en' ? 'View Receipts' : lang === 'pt' ? 'Ver Recibos' : 'Voir mes paiements'}
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  className="portal-action-btn"
-                  onClick={() => setActiveTab('payments')}
-                >
-                  <i className="fa-solid fa-credit-card"></i> {pt.actionBtn}
-                </button>
-              </div>
+              ) : hasPaidAtLeastOne ? (
+                <div className="portal-action-banner" style={{ background: '#ecfdf5', borderColor: '#a7f3d0' }}>
+                  <div className="portal-action-content">
+                    <i className="fa-solid fa-circle-check portal-action-icon" style={{ color: '#059669' }}></i>
+                    <div>
+                      <div className="portal-action-title" style={{ color: '#065f46' }}>
+                        {lang === 'en'
+                          ? `${paidInstallmentsCount} installment(s) confirmed (${formationTitle}) — Remaining: ${formatMoney(remainingAmount)}`
+                          : lang === 'pt'
+                          ? `${paidInstallmentsCount} parcela(s) confirmada(s) (${formationTitle}) — Restante: ${formatMoney(remainingAmount)}`
+                          : `${paidInstallmentsCount === 1 ? '1ère tranche réglée' : `${paidInstallmentsCount} tranches réglées`} (${formationTitle}) — Solde restant : ${formatMoney(remainingAmount)}`}
+                      </div>
+                      <div className="portal-action-desc" style={{ color: '#047857' }}>
+                        {lang === 'en'
+                          ? `Paid so far: ${formatMoney(totalPaid)}. Next installment: #${nextPendingInstallmentNo} (${formatMoney(nextPendingAmount)}).`
+                          : lang === 'pt'
+                          ? `Total pago: ${formatMoney(totalPaid)}. Próxima parcela: nº ${nextPendingInstallmentNo} (${formatMoney(nextPendingAmount)}).`
+                          : `Déjà réglé : ${formatMoney(totalPaid)}. Votre dossier est actif. Prochaine échéance : Tranche ${nextPendingInstallmentNo} (${formatMoney(nextPendingAmount)}).`}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="portal-action-btn"
+                    style={{ background: '#059669' }}
+                    onClick={() => setActiveTab('payments')}
+                  >
+                    <i className="fa-solid fa-credit-card"></i> {lang === 'en' ? `Pay Installment ${nextPendingInstallmentNo}` : lang === 'pt' ? `Pagar Parcela ${nextPendingInstallmentNo}` : `Régler la tranche ${nextPendingInstallmentNo}`}
+                  </button>
+                </div>
+              ) : (
+                <div className="portal-action-banner">
+                  <div className="portal-action-content">
+                    <i className="fa-solid fa-circle-exclamation portal-action-icon"></i>
+                    <div>
+                      <div className="portal-action-title">
+                        {lang === 'en'
+                          ? `Next required action: 1st installment payment (${formationTitle})`
+                          : lang === 'pt'
+                          ? `Próxima ação necessária: Pagamento da 1ª parcela (${formationTitle})`
+                          : `Prochaine action requise : Règlement de la 1ère tranche (${formationTitle})`}
+                      </div>
+                      <div className="portal-action-desc">
+                        {pt.actionDesc}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="portal-action-btn"
+                    onClick={() => setActiveTab('payments')}
+                  >
+                    <i className="fa-solid fa-credit-card"></i> {pt.actionBtn}
+                  </button>
+                </div>
+              )}
 
               <div className="portal-summary-strip">
                 <div className="portal-summary-card">
@@ -1047,7 +1464,15 @@ export const StudentPortalPage: React.FC = () => {
               <div className="portal-journey-card">
                 <div className="portal-journey-header">
                   <h2>{pt.journeyHeader}</h2>
-                  <span className="portal-status-tag">{pt.journeyStep2Active}</span>
+                  <span className="portal-status-tag">
+                    {hasPaidAtLeastOne
+                      ? lang === 'en'
+                        ? 'Step 3 active'
+                        : lang === 'pt'
+                        ? 'Etapa 3 em andamento'
+                        : 'Étape 3 en cours'
+                      : pt.journeyStep2Active}
+                  </span>
                 </div>
                 <div className="portal-journey-grid">
                   <div className="portal-journey-step completed">
@@ -1058,14 +1483,26 @@ export const StudentPortalPage: React.FC = () => {
                     <div className="portal-journey-step-desc">{pt.step1Desc}</div>
                   </div>
 
-                  <div className="portal-journey-step active">
-                    <span className="portal-step-pill active">2</span>
-                    <div className="portal-journey-step-title">{pt.step2Title}</div>
-                    <div className="portal-journey-step-desc">{pt.step2Desc}</div>
+                  <div className={`portal-journey-step ${hasPaidAtLeastOne ? 'completed' : 'active'}`}>
+                    <span className={`portal-step-pill ${hasPaidAtLeastOne ? 'completed' : 'active'}`}>
+                      {hasPaidAtLeastOne ? <i className="fa-solid fa-check"></i> : '2'}
+                    </span>
+                    <div className="portal-journey-step-title">
+                      {lang === 'en'
+                        ? `2. Payment ${levelCodeLabel}`
+                        : lang === 'pt'
+                        ? `2. Pagamento ${levelCodeLabel}`
+                        : `2. Paiement ${levelCodeLabel}`}
+                    </div>
+                    <div className="portal-journey-step-desc">
+                      {hasPaidAtLeastOne
+                        ? `${formatMoney(totalPaid)} ${lang === 'en' ? 'paid' : lang === 'pt' ? 'pago' : 'réglé'}`
+                        : pt.step2Desc}
+                    </div>
                   </div>
 
-                  <div className="portal-journey-step">
-                    <span className="portal-step-pill pending">3</span>
+                  <div className={`portal-journey-step ${hasPaidAtLeastOne ? 'active' : ''}`}>
+                    <span className={`portal-step-pill ${hasPaidAtLeastOne ? 'active' : 'pending'}`}>3</span>
                     <div className="portal-journey-step-title">{pt.step3Title}</div>
                     <div className="portal-journey-step-desc">{pt.step3Desc}</div>
                   </div>
@@ -1073,19 +1510,31 @@ export const StudentPortalPage: React.FC = () => {
                   <div className="portal-journey-step">
                     <span className="portal-step-pill pending">4</span>
                     <div className="portal-journey-step-title">{pt.step4Title}</div>
-                    <div className="portal-journey-step-desc">{pt.step4Desc}</div>
+                    <div className="portal-journey-step-desc">
+                      {lang === 'en' ? `Validation ${levelCodeLabel} (14/20)` : lang === 'pt' ? `Validação ${levelCodeLabel} (14/20)` : `Validation ${levelCodeLabel} (14/20)`}
+                    </div>
                   </div>
 
                   <div className="portal-journey-step">
                     <span className="portal-step-pill pending">5</span>
-                    <div className="portal-journey-step-title">{pt.step5Title}</div>
+                    <div className="portal-journey-step-title">
+                      {lang === 'en' ? `5. Next: ${nextLevelCode}` : lang === 'pt' ? `5. Próximo: ${nextLevelCode}` : `5. Choix ${nextLevelCode}`}
+                    </div>
                     <div className="portal-journey-step-desc">{pt.step5Desc}</div>
                   </div>
 
-                  <div className="portal-journey-step">
-                    <span className="portal-step-pill pending">6</span>
+                  <div className={`portal-journey-step ${step6Done ? 'completed' : step6Active ? 'active' : ''}`}>
+                    <span className={`portal-step-pill ${step6Done ? 'completed' : step6Active ? 'active' : 'pending'}`}>
+                      {step6Done ? <i className="fa-solid fa-check"></i> : '6'}
+                    </span>
                     <div className="portal-journey-step-title">{pt.step6Title}</div>
-                    <div className="portal-journey-step-desc">{pt.step6Desc}</div>
+                    <div className="portal-journey-step-desc">
+                      {step6Done
+                        ? lang === 'en' ? 'Visa Granted' : lang === 'pt' ? 'Visto Aprovado' : 'Visa Accordé'
+                        : hasOfficialDocs
+                        ? lang === 'en' ? 'Docs issued' : lang === 'pt' ? 'Docs emitidos' : 'Documents délivrés'
+                        : pt.step6Desc}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1146,61 +1595,209 @@ export const StudentPortalPage: React.FC = () => {
                     <span>{pt.docsTitle}</span>
                   </h3>
                   <div className="portal-docs-stack">
-                    <div className="portal-doc-entry">
-                      <div className="portal-doc-info-block">
-                        <i className="fa-solid fa-file-lines portal-doc-icon-red"></i>
-                        <div>
-                          <div className="title">{pt.doc1Title}</div>
-                          <div className="status">{pt.doc1Sub}</div>
-                        </div>
-                      </div>
-                      <span className="portal-badge-pending-tag">{pt.doc1Badge}</span>
-                    </div>
+                    {/* Documents officiels envoyés par l'administration */}
+                    {(() => {
+                      const adminDocs = user?.official_documents || [];
+                      const findDoc = (keywords: string[]) =>
+                        adminDocs.find((d) =>
+                          keywords.some((k) => d.title.toLowerCase().includes(k))
+                        );
 
-                    <a href="#garantie" className="portal-doc-entry">
-                      <div className="portal-doc-info-block">
-                        <i
-                          className="fa-solid fa-file-shield"
-                          style={{ color: '#00a859', fontSize: '1.2rem' }}
-                        ></i>
-                        <div>
-                          <div className="title">{pt.doc2Title}</div>
-                          <div className="status">{pt.doc2Sub}</div>
-                        </div>
-                      </div>
-                      <span className="portal-btn-download-pill">
-                        <i className="fa-solid fa-download"></i> {pt.download}
-                      </span>
-                    </a>
+                      const docAttestation = findDoc(['attestation', 'certificat', 'inscription']);
+                      const docContrat = findDoc(['contrat', 'garantie', 'remboursement']);
+                      const docFiche = findDoc(['fiche', 'candidature']);
+                      const docGuide = findDoc(['guide', 'installation', 'visa']);
 
-                    <a href="#fiche" className="portal-doc-entry">
-                      <div className="portal-doc-info-block">
-                        <i className="fa-solid fa-file-pdf portal-doc-icon-red"></i>
-                        <div>
-                          <div className="title">{pt.doc3Title}</div>
-                          <div className="status">Réf {candidateNumber}</div>
-                        </div>
-                      </div>
-                      <span className="portal-btn-download-pill">
-                        <i className="fa-solid fa-download"></i> {pt.download}
-                      </span>
-                    </a>
+                      const matchedIds = new Set(
+                        [docAttestation, docContrat, docFiche, docGuide]
+                          .filter(Boolean)
+                          .map((d) => d!.id)
+                      );
+                      const extraDocs = adminDocs.filter((d) => !matchedIds.has(d.id));
 
-                    <a href="#guide" className="portal-doc-entry">
-                      <div className="portal-doc-info-block">
-                        <i
-                          className="fa-solid fa-book"
-                          style={{ color: '#1877f2', fontSize: '1.2rem' }}
-                        ></i>
-                        <div>
-                          <div className="title">{pt.doc4Title}</div>
-                          <div className="status">{pt.doc4Sub}</div>
-                        </div>
-                      </div>
-                      <span className="portal-btn-download-pill">
-                        <i className="fa-solid fa-download"></i> {pt.consult}
-                      </span>
-                    </a>
+                      return (
+                        <>
+                          {/* 1. Attestation d'Inscription */}
+                          {docAttestation?.file_url ? (
+                            <a
+                              href={docAttestation.file_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              download
+                              className="portal-doc-entry"
+                            >
+                              <div className="portal-doc-info-block">
+                                <i className="fa-solid fa-file-lines portal-doc-icon-red"></i>
+                                <div>
+                                  <div className="title">{docAttestation.title}</div>
+                                  <div className="status">
+                                    {docAttestation.issued_at ? `Délivrée le ${docAttestation.issued_at}` : pt.doc1Sub}
+                                  </div>
+                                </div>
+                              </div>
+                              <span className="portal-btn-download-pill">
+                                <i className="fa-solid fa-download"></i> {pt.download}
+                              </span>
+                            </a>
+                          ) : (
+                            <div className="portal-doc-entry">
+                              <div className="portal-doc-info-block">
+                                <i className="fa-solid fa-file-lines portal-doc-icon-red"></i>
+                                <div>
+                                  <div className="title">{pt.doc1Title}</div>
+                                  <div className="status">{pt.doc1Sub}</div>
+                                </div>
+                              </div>
+                              <span className={hasPaidAtLeastOne ? 'portal-status-tag' : 'portal-badge-pending-tag'}>
+                                {hasPaidAtLeastOne
+                                  ? lang === 'en'
+                                    ? 'In Progress (Paid)'
+                                    : lang === 'pt'
+                                    ? 'Em emissão (Pago)'
+                                    : 'En cours d’émission'
+                                  : pt.doc1Badge}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* 2. Contrat & Garantie 85% */}
+                          {docContrat?.file_url ? (
+                            <a
+                              href={docContrat.file_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              download
+                              className="portal-doc-entry"
+                            >
+                              <div className="portal-doc-info-block">
+                                <i className="fa-solid fa-file-shield" style={{ color: '#00a859', fontSize: '1.2rem' }}></i>
+                                <div>
+                                  <div className="title">{docContrat.title}</div>
+                                  <div className="status">
+                                    {docContrat.issued_at ? `Délivré le ${docContrat.issued_at}` : pt.doc2Sub}
+                                  </div>
+                                </div>
+                              </div>
+                              <span className="portal-btn-download-pill">
+                                <i className="fa-solid fa-download"></i> {pt.download}
+                              </span>
+                            </a>
+                          ) : (
+                            <div className="portal-doc-entry">
+                              <div className="portal-doc-info-block">
+                                <i className="fa-solid fa-file-shield" style={{ color: '#00a859', fontSize: '1.2rem' }}></i>
+                                <div>
+                                  <div className="title">{pt.doc2Title}</div>
+                                  <div className="status">{pt.doc2Sub}</div>
+                                </div>
+                              </div>
+                              <span className="portal-badge-pending-tag">
+                                {lang === 'en' ? 'Pending' : lang === 'pt' ? 'Em preparação' : 'En préparation'}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* 3. Fiche de Candidature */}
+                          {docFiche?.file_url ? (
+                            <a
+                              href={docFiche.file_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              download
+                              className="portal-doc-entry"
+                            >
+                              <div className="portal-doc-info-block">
+                                <i className="fa-solid fa-file-pdf portal-doc-icon-red"></i>
+                                <div>
+                                  <div className="title">{docFiche.title}</div>
+                                  <div className="status">
+                                    {docFiche.issued_at ? `Délivrée le ${docFiche.issued_at}` : `Réf ${candidateNumber}`}
+                                  </div>
+                                </div>
+                              </div>
+                              <span className="portal-btn-download-pill">
+                                <i className="fa-solid fa-download"></i> {pt.download}
+                              </span>
+                            </a>
+                          ) : (
+                            <div className="portal-doc-entry">
+                              <div className="portal-doc-info-block">
+                                <i className="fa-solid fa-file-pdf portal-doc-icon-red"></i>
+                                <div>
+                                  <div className="title">{pt.doc3Title}</div>
+                                  <div className="status">Réf {candidateNumber}</div>
+                                </div>
+                              </div>
+                              <span className="portal-badge-pending-tag">
+                                {lang === 'en' ? 'Pending' : lang === 'pt' ? 'Em preparação' : 'En préparation'}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* 4. Guide d'Installation & Visa */}
+                          {docGuide?.file_url ? (
+                            <a
+                              href={docGuide.file_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              download
+                              className="portal-doc-entry"
+                            >
+                              <div className="portal-doc-info-block">
+                                <i className="fa-solid fa-book" style={{ color: '#1877f2', fontSize: '1.2rem' }}></i>
+                                <div>
+                                  <div className="title">{docGuide.title}</div>
+                                  <div className="status">
+                                    {docGuide.issued_at ? `Délivré le ${docGuide.issued_at}` : pt.doc4Sub}
+                                  </div>
+                                </div>
+                              </div>
+                              <span className="portal-btn-download-pill">
+                                <i className="fa-solid fa-download"></i> {pt.consult}
+                              </span>
+                            </a>
+                          ) : (
+                            <div className="portal-doc-entry">
+                              <div className="portal-doc-info-block">
+                                <i className="fa-solid fa-book" style={{ color: '#1877f2', fontSize: '1.2rem' }}></i>
+                                <div>
+                                  <div className="title">{pt.doc4Title}</div>
+                                  <div className="status">{pt.doc4Sub}</div>
+                                </div>
+                              </div>
+                              <span className="portal-badge-pending-tag">
+                                {lang === 'en' ? 'Pending' : lang === 'pt' ? 'Em preparação' : 'En préparation'}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Autres documents officiels personnalisés envoyés par l'admin */}
+                          {extraDocs.map((doc) => (
+                            <a
+                              key={doc.id}
+                              href={doc.file_url || '#'}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              download
+                              className="portal-doc-entry"
+                            >
+                              <div className="portal-doc-info-block">
+                                <i className="fa-solid fa-file-circle-check" style={{ color: '#059669', fontSize: '1.2rem' }}></i>
+                                <div>
+                                  <div className="title">{doc.title}</div>
+                                  <div className="status">
+                                    {doc.issued_at ? `Envoyé le ${doc.issued_at}` : 'Document officiel'}
+                                  </div>
+                                </div>
+                              </div>
+                              <span className="portal-btn-download-pill">
+                                <i className="fa-solid fa-download"></i> {pt.download}
+                              </span>
+                            </a>
+                          ))}
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
@@ -1210,59 +1807,209 @@ export const StudentPortalPage: React.FC = () => {
           {/* ONGLET 2 : PROFILE */}
           {activeTab === 'profile' && (
             <div className="portal-section-card">
-              <h3 className="portal-section-card-title">
-                <i className="fa-solid fa-id-card-clip"></i>
-                <span>{pt.profileTitle}</span>
-              </h3>
-
-              <div className="portal-info-box" style={{ marginBottom: '1.25rem' }}>
-                <i className="fa-solid fa-circle-info"></i> {pt.profileRule}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem' }}>
+                <h3 className="portal-section-card-title" style={{ margin: 0 }}>
+                  <i className="fa-solid fa-id-card-clip"></i>
+                  <span>{pt.profileTitle}</span>
+                </h3>
+                {!isEditingProfile && (
+                  <button
+                    type="button"
+                    className="portal-action-btn"
+                    style={{ background: '#0f172a', padding: '0.5rem 1rem', fontSize: '0.82rem' }}
+                    onClick={startEditProfile}
+                  >
+                    <i className="fa-solid fa-pen-to-square"></i>{' '}
+                    {lang === 'en' ? 'Edit my information' : lang === 'pt' ? 'Editar minhas informações' : 'Modifier mes informations'}
+                  </button>
+                )}
               </div>
 
-              <table className="portal-clean-table">
-                <tbody>
-                  <tr>
-                    <td className="prop">{pt.propFirstName}</td>
-                    <td className="val">{firstName}</td>
-                  </tr>
-                  <tr>
-                    <td className="prop">{pt.propLastName}</td>
-                    <td className="val">{lastName}</td>
-                  </tr>
-                  <tr>
-                    <td className="prop">{pt.propEmail}</td>
-                    <td className="val">{user?.email || 'komlakimi@gmail.com'}</td>
-                  </tr>
-                  <tr>
-                    <td className="prop">{pt.propPhone}</td>
-                    <td className="val">{user?.profile?.phone || '+228 90 0998898'}</td>
-                  </tr>
-                  <tr>
-                    <td className="prop">{pt.propCountryIso}</td>
-                    <td className="val">{user?.profile?.country_code || 'TG (Togo)'}</td>
-                  </tr>
-                  <tr>
-                    <td className="prop">{pt.propFutureProject}</td>
-                    <td className="val">{pt.valFutureProject}</td>
-                  </tr>
-                  <tr>
-                    <td className="prop">{pt.propMode}</td>
-                    <td className="val">{studyModeLabel}</td>
-                  </tr>
-                  <tr>
-                    <td className="prop">{pt.propHostCity}</td>
-                    <td className="val">{cityName} ({cityState})</td>
-                  </tr>
-                  <tr>
-                    <td className="prop">{pt.propRhythm}</td>
-                    <td className="val">{rhythmLabel}</td>
-                  </tr>
-                  <tr>
-                    <td className="prop">{pt.propRegDate}</td>
-                    <td className="val">{latestEnrollment?.enrolled_at || '05/11/2026'}</td>
-                  </tr>
-                </tbody>
-              </table>
+              {isEditingProfile ? (
+                <form
+                  onSubmit={handleSaveProfile}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '1rem',
+                    background: '#f8fafc',
+                    padding: '1.25rem',
+                    borderRadius: '14px',
+                    border: '1px solid #e2e8f0',
+                  }}
+                >
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.9rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#334155' }}>{pt.propFirstName} *</label>
+                      <input
+                        type="text"
+                        required
+                        value={editFirstName}
+                        onChange={(e) => setEditFirstName(e.target.value)}
+                        style={{ padding: '0.6rem 0.75rem', borderRadius: '10px', border: '1px solid #cbd5e1', background: '#fff', fontSize: '0.88rem' }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#334155' }}>{pt.propLastName} *</label>
+                      <input
+                        type="text"
+                        required
+                        value={editLastName}
+                        onChange={(e) => setEditLastName(e.target.value)}
+                        style={{ padding: '0.6rem 0.75rem', borderRadius: '10px', border: '1px solid #cbd5e1', background: '#fff', fontSize: '0.88rem' }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.9rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#334155' }}>
+                        {lang === 'en' ? 'Date of Birth' : lang === 'pt' ? 'Data de nascimento' : 'Date de naissance'}
+                      </label>
+                      <input
+                        type="date"
+                        value={editBirthDate}
+                        onChange={(e) => setEditBirthDate(e.target.value)}
+                        style={{ padding: '0.6rem 0.75rem', borderRadius: '10px', border: '1px solid #cbd5e1', background: '#fff', fontSize: '0.88rem' }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#334155' }}>{pt.propPhone}</label>
+                      <input
+                        type="tel"
+                        value={editPhone}
+                        onChange={(e) => setEditPhone(e.target.value)}
+                        style={{ padding: '0.6rem 0.75rem', borderRadius: '10px', border: '1px solid #cbd5e1', background: '#fff', fontSize: '0.88rem' }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.9rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#334155' }}>{pt.propCountryIso}</label>
+                      <input
+                        type="text"
+                        maxLength={2}
+                        value={editCountryCode}
+                        onChange={(e) => setEditCountryCode(e.target.value.toUpperCase())}
+                        placeholder="Ex: SN, TG, CI, BJ"
+                        style={{ padding: '0.6rem 0.75rem', borderRadius: '10px', border: '1px solid #cbd5e1', background: '#fff', fontSize: '0.88rem' }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#334155' }}>{pt.propRhythm}</label>
+                      <select
+                        value={editRhythm}
+                        onChange={(e) => setEditRhythm(e.target.value as 'day' | 'evening')}
+                        style={{ padding: '0.6rem 0.75rem', borderRadius: '10px', border: '1px solid #cbd5e1', background: '#fff', fontSize: '0.88rem' }}
+                      >
+                        <option value="day">{pt.rhythmDay}</option>
+                        <option value="evening">{pt.rhythmEvening}</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#334155' }}>
+                      {lang === 'en' ? 'Study Purpose' : lang === 'pt' ? 'Objetivo de estudo' : 'Objet d’étude'}
+                    </label>
+                    <select
+                      value={editStudyPurpose}
+                      onChange={(e) => setEditStudyPurpose(e.target.value)}
+                      style={{ padding: '0.6rem 0.75rem', borderRadius: '10px', border: '1px solid #cbd5e1', background: '#fff', fontSize: '0.88rem' }}
+                    >
+                      <option value="etudes_superieures">Études supérieures / Université</option>
+                      <option value="business_affaires">Business & Affaires</option>
+                      <option value="travail">Travail / Carrière professionnelle</option>
+                      <option value="conversation">Conversation uniquement</option>
+                      <option value="celpe_bras">Préparation Examen CELPE-Bras</option>
+                      <option value="tourisme_immersion">Voyage & Immersion culturelle</option>
+                      <option value="autre">Autre projet</option>
+                    </select>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.25rem' }}>
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingProfile(false)}
+                      style={{
+                        padding: '0.55rem 1rem',
+                        borderRadius: '10px',
+                        border: '1px solid #cbd5e1',
+                        background: '#ffffff',
+                        color: '#334155',
+                        fontWeight: 700,
+                        fontSize: '0.84rem',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {lang === 'en' ? 'Cancel' : lang === 'pt' ? 'Cancelar' : 'Annuler'}
+                    </button>
+                    <button
+                      type="submit"
+                      className="portal-action-btn"
+                      style={{ background: '#059669' }}
+                      disabled={isSavingProfile}
+                    >
+                      <i className="fa-solid fa-check"></i>{' '}
+                      {isSavingProfile
+                        ? lang === 'en' ? 'Saving...' : lang === 'pt' ? 'Salvando...' : 'Enregistrement...'
+                        : lang === 'en' ? 'Save Changes' : lang === 'pt' ? 'Salvar Alterações' : 'Enregistrer les modifications'}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <table className="portal-clean-table">
+                  <tbody>
+                    <tr>
+                      <td className="prop">{pt.propFirstName}</td>
+                      <td className="val">{firstName}</td>
+                    </tr>
+                    <tr>
+                      <td className="prop">{pt.propLastName}</td>
+                      <td className="val">{lastName}</td>
+                    </tr>
+                    {user?.profile?.birth_date && (
+                      <tr>
+                        <td className="prop">{lang === 'en' ? 'Date of Birth' : lang === 'pt' ? 'Data de nascimento' : 'Date de naissance'}</td>
+                        <td className="val">{String(user.profile.birth_date).slice(0, 10).split('-').reverse().join('/')}</td>
+                      </tr>
+                    )}
+                    <tr>
+                      <td className="prop">{pt.propEmail}</td>
+                      <td className="val">{user?.email || 'komlakimi@gmail.com'}</td>
+                    </tr>
+                    <tr>
+                      <td className="prop">{pt.propPhone}</td>
+                      <td className="val">{user?.profile?.phone || '+228 90 0998898'}</td>
+                    </tr>
+                    <tr>
+                      <td className="prop">{pt.propCountryIso}</td>
+                      <td className="val">{user?.profile?.country_code || 'TG (Togo)'}</td>
+                    </tr>
+                    <tr>
+                      <td className="prop">{pt.propFutureProject}</td>
+                      <td className="val">{pt.valFutureProject}</td>
+                    </tr>
+                    <tr>
+                      <td className="prop">{pt.propMode}</td>
+                      <td className="val">{studyModeLabel}</td>
+                    </tr>
+                    <tr>
+                      <td className="prop">{pt.propHostCity}</td>
+                      <td className="val">{cityName} ({cityState})</td>
+                    </tr>
+                    <tr>
+                      <td className="prop">{pt.propRhythm}</td>
+                      <td className="val">{rhythmLabel}</td>
+                    </tr>
+                    <tr>
+                      <td className="prop">{pt.propRegDate}</td>
+                      <td className="val">{latestEnrollment?.enrolled_at || '05/11/2026'}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              )}
             </div>
           )}
 
@@ -1278,6 +2025,7 @@ export const StudentPortalPage: React.FC = () => {
               </p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {/* Étape 1 : Inscription Initiale */}
                 <div className="portal-journey-step completed" style={{ padding: '1rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.35rem' }}>
                     <span className="portal-step-pill completed"><i className="fa-solid fa-check"></i></span>
@@ -1285,47 +2033,112 @@ export const StudentPortalPage: React.FC = () => {
                     <span className="portal-status-tag" style={{ marginLeft: 'auto' }}>{pt.j1Tag}</span>
                   </div>
                   <p style={{ fontSize: '0.82rem', color: '#475569', margin: 0 }}>
-                    {pt.j1Desc} ({studyModeLabel} — {cityName}).
+                    {pt.j1Desc} ({formationTitle} • {studyModeLabel} — {cityName}).
                   </p>
                 </div>
 
-                <div className="portal-journey-step active" style={{ padding: '1rem' }}>
+                {/* Étape 2 : Paiement (Niveau réel) */}
+                <div className={`portal-journey-step ${step2Done ? 'completed' : 'active'}`} style={{ padding: '1rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.35rem' }}>
-                    <span className="portal-step-pill active">2</span>
-                    <strong style={{ fontSize: '0.92rem' }}>{pt.j2Title}</strong>
-                    <span className="portal-badge-pending-tag" style={{ marginLeft: 'auto' }}>{pt.j2Tag}</span>
+                    <span className={`portal-step-pill ${step2Done ? 'completed' : 'active'}`}>
+                      {step2Done ? <i className="fa-solid fa-check"></i> : '2'}
+                    </span>
+                    <strong style={{ fontSize: '0.92rem' }}>
+                      {lang === 'en'
+                        ? `Step 2: Payment (${formationTitle})`
+                        : lang === 'pt'
+                        ? `Etapa 2: Pagamento (${formationTitle})`
+                        : `Étape 2 : Règlement (${formationTitle})`}
+                    </strong>
+                    <span
+                      className={step2Done ? 'portal-status-tag' : 'portal-badge-pending-tag'}
+                      style={{ marginLeft: 'auto' }}
+                    >
+                      {isFullyPaid
+                        ? lang === 'en' ? 'Fully Paid' : lang === 'pt' ? 'Quitado' : 'Intégralement réglé'
+                        : step2Done
+                        ? lang === 'en' ? `${paidInstallmentsCount}/3 Paid` : lang === 'pt' ? `${paidInstallmentsCount}/3 Pagas` : `${paidInstallmentsCount}/3 Tranches payées`
+                        : pt.j2Tag}
+                    </span>
                   </div>
                   <p style={{ fontSize: '0.82rem', color: '#475569', margin: 0 }}>
-                    {pt.j2Desc}
+                    {isFullyPaid
+                      ? lang === 'en'
+                        ? 'Tuition fully confirmed.'
+                        : lang === 'pt'
+                        ? 'Mensalidade totalmente confirmada.'
+                        : 'Scolarité entièrement confirmée.'
+                      : step2Done
+                      ? lang === 'en'
+                        ? `${paidInstallmentsCount}/3 installments confirmed.`
+                        : lang === 'pt'
+                        ? `${paidInstallmentsCount}/3 parcelas confirmadas.`
+                        : `${paidInstallmentsCount}/3 tranches confirmées.`
+                      : pt.j2Desc}
                   </p>
                 </div>
 
-                <div className="portal-journey-step" style={{ padding: '1rem' }}>
+                {/* Étape 3 : Cours & Assiduité */}
+                <div className={`portal-journey-step ${step3Done ? 'completed' : step3Active ? 'active' : ''}`} style={{ padding: '1rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.35rem' }}>
-                    <span className="portal-step-pill pending">3</span>
+                    <span className={`portal-step-pill ${step3Done ? 'completed' : step3Active ? 'active' : 'pending'}`}>
+                      {step3Done ? <i className="fa-solid fa-check"></i> : '3'}
+                    </span>
                     <strong style={{ fontSize: '0.92rem' }}>{pt.j3Title}</strong>
-                    <span style={{ fontSize: '0.74rem', color: '#94a3b8', marginLeft: 'auto' }}>{pt.j3Tag}</span>
+                    <span
+                      className={step3Done ? 'portal-status-tag' : step3Active ? 'portal-badge-pending-tag' : ''}
+                      style={step3Done || step3Active ? { marginLeft: 'auto' } : { fontSize: '0.74rem', color: '#94a3b8', marginLeft: 'auto' }}
+                    >
+                      {step3Done
+                        ? lang === 'en' ? 'Completed' : lang === 'pt' ? 'Concluída' : 'Validée'
+                        : step3Active
+                        ? lang === 'en' ? 'In Progress' : lang === 'pt' ? 'Em andamento' : 'En cours'
+                        : pt.j3Tag}
+                    </span>
                   </div>
-                  <p style={{ fontSize: '0.82rem', color: '#64748b', margin: 0 }}>
+                  <p style={{ fontSize: '0.82rem', color: step3Active || step3Done ? '#475569' : '#64748b', margin: 0 }}>
                     {pt.j3Desc}
                   </p>
                 </div>
 
-                <div className="portal-journey-step" style={{ padding: '1rem' }}>
+                {/* Étape 4 : Examens & Validation du niveau réel */}
+                <div className={`portal-journey-step ${step4Done ? 'completed' : ''}`} style={{ padding: '1rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.35rem' }}>
-                    <span className="portal-step-pill pending">4</span>
-                    <strong style={{ fontSize: '0.92rem' }}>{pt.j4Title}</strong>
-                    <span style={{ fontSize: '0.74rem', color: '#94a3b8', marginLeft: 'auto' }}>{pt.j4Tag}</span>
+                    <span className={`portal-step-pill ${step4Done ? 'completed' : 'pending'}`}>
+                      {step4Done ? <i className="fa-solid fa-check"></i> : '4'}
+                    </span>
+                    <strong style={{ fontSize: '0.92rem' }}>
+                      {lang === 'en'
+                        ? `Step 4: Class Exams & ${levelCodeLabel} Validation`
+                        : lang === 'pt'
+                        ? `Etapa 4: Provas & Validação do ${levelCodeLabel}`
+                        : `Étape 4 : Examens en Classe & Validation du ${levelCodeLabel}`}
+                    </strong>
+                    <span
+                      className={step4Done ? 'portal-status-tag' : ''}
+                      style={step4Done ? { marginLeft: 'auto' } : { fontSize: '0.74rem', color: '#94a3b8', marginLeft: 'auto' }}
+                    >
+                      {step4Done ? (lang === 'en' ? 'Validated' : lang === 'pt' ? 'Validado' : 'Validée') : pt.j4Tag}
+                    </span>
                   </div>
                   <p style={{ fontSize: '0.82rem', color: '#64748b', margin: 0 }}>
                     {pt.j4Desc}
                   </p>
                 </div>
 
-                <div className="portal-journey-step" style={{ padding: '1rem' }}>
+                {/* Étape 5 : Passage au niveau suivant */}
+                <div className={`portal-journey-step ${step5Done ? 'completed' : ''}`} style={{ padding: '1rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.35rem' }}>
-                    <span className="portal-step-pill pending">5</span>
-                    <strong style={{ fontSize: '0.92rem' }}>{pt.j5Title}</strong>
+                    <span className={`portal-step-pill ${step5Done ? 'completed' : 'pending'}`}>
+                      {step5Done ? <i className="fa-solid fa-check"></i> : '5'}
+                    </span>
+                    <strong style={{ fontSize: '0.92rem' }}>
+                      {lang === 'en'
+                        ? `Step 5: Progression to ${nextLevelCode}`
+                        : lang === 'pt'
+                        ? `Etapa 5: Progressão para ${nextLevelCode}`
+                        : `Étape 5 : Réinscription et Passage vers ${nextLevelCode}`}
+                    </strong>
                     <span style={{ fontSize: '0.74rem', color: '#94a3b8', marginLeft: 'auto' }}>{pt.j5Tag}</span>
                   </div>
                   <p style={{ fontSize: '0.82rem', color: '#64748b', margin: 0 }}>
@@ -1333,13 +2146,27 @@ export const StudentPortalPage: React.FC = () => {
                   </p>
                 </div>
 
-                <div className="portal-journey-step" style={{ padding: '1rem' }}>
+                {/* Étape 6 : Règlement Final & Procédure de Visa */}
+                <div className={`portal-journey-step ${step6Done ? 'completed' : step6Active ? 'active' : ''}`} style={{ padding: '1rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.35rem' }}>
-                    <span className="portal-step-pill pending">6</span>
+                    <span className={`portal-step-pill ${step6Done ? 'completed' : step6Active ? 'active' : 'pending'}`}>
+                      {step6Done ? <i className="fa-solid fa-check"></i> : '6'}
+                    </span>
                     <strong style={{ fontSize: '0.92rem' }}>{pt.j6Title}</strong>
-                    <span style={{ fontSize: '0.74rem', color: '#94a3b8', marginLeft: 'auto' }}>{pt.j6Tag}</span>
+                    <span
+                      className={step6Done ? 'portal-status-tag' : step6Active ? 'portal-badge-pending-tag' : ''}
+                      style={step6Done || step6Active ? { marginLeft: 'auto' } : { fontSize: '0.74rem', color: '#94a3b8', marginLeft: 'auto' }}
+                    >
+                      {step6Done
+                        ? lang === 'en' ? 'Visa Granted' : lang === 'pt' ? 'Visto Aprovado' : 'Visa Accordé'
+                        : hasOfficialDocs
+                        ? lang === 'en' ? 'Documents Issued' : lang === 'pt' ? 'Documentos Emitidos' : 'Documents délivrés'
+                        : step6Active
+                        ? lang === 'en' ? 'In Progress' : lang === 'pt' ? 'Em andamento' : 'En cours'
+                        : pt.j6Tag}
+                    </span>
                   </div>
-                  <p style={{ fontSize: '0.82rem', color: '#64748b', margin: 0 }}>
+                  <p style={{ fontSize: '0.82rem', color: step6Active || step6Done ? '#475569' : '#64748b', margin: 0 }}>
                     {pt.j6Desc}
                   </p>
                 </div>
@@ -1355,11 +2182,130 @@ export const StudentPortalPage: React.FC = () => {
                 <span>{pt.payTabTitle}</span>
               </h3>
 
-              {stripeSuccessMsg && (
-                <div className="portal-info-box" style={{ background: '#ecfdf5', borderColor: '#bbf7d0', color: '#166534', marginBottom: '1.25rem', fontWeight: 700 }}>
-                  <i className="fa-solid fa-circle-check"></i> {stripeSuccessMsg}
+              {/* BLOC 1 : FRAIS DE SERVICE (Plateforme & Démarches) */}
+              {serviceFee > 0 && (
+                <div
+                  style={{
+                    marginBottom: '1.75rem',
+                    padding: '1.15rem 1.25rem',
+                    borderRadius: '14px',
+                    border: serviceFeePaid ? '1.5px solid #10b981' : '1.5px solid #2563eb',
+                    background: serviceFeePaid ? '#f0fdf4' : '#eff6ff',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                        <span
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '24px',
+                            height: '24px',
+                            borderRadius: '50%',
+                            background: serviceFeePaid ? '#059669' : '#2563eb',
+                            color: '#ffffff',
+                            fontSize: '0.75rem',
+                            fontWeight: 800,
+                          }}
+                        >
+                          1
+                        </span>
+                        <strong style={{ fontSize: '0.96rem', color: '#0f172a' }}>
+                          {lang === 'en'
+                            ? 'Service & Registration Fees (Platform & Visa Procedures)'
+                            : lang === 'pt'
+                            ? 'Taxa de Serviço e Matrícula (Plataforma & Trâmites)'
+                            : '1. Frais de Service & Inscription (Plateforme & Démarches)'}
+                        </strong>
+                        {serviceFeePaid ? (
+                          <span className="portal-status-tag" style={{ background: '#d1fae5', color: '#065f46' }}>
+                            <i className="fa-solid fa-check"></i> {lang === 'en' ? 'Paid' : lang === 'pt' ? 'Pago' : 'Payé'}
+                          </span>
+                        ) : (
+                          <span className="portal-badge-pending-tag">
+                            {lang === 'en' ? 'Required' : lang === 'pt' ? 'Obrigatório' : 'À régler'}
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: '#475569' }}>
+                        {serviceFeePaid && serviceFeePaidAt
+                          ? `${lang === 'en' ? 'Paid on' : lang === 'pt' ? 'Pago em' : 'Réglé le'} ${serviceFeePaidAt} — ${lang === 'en' ? 'Platform access, admission file & consular support.' : lang === 'pt' ? 'Acesso à plataforma, processo de matrícula e suporte consular.' : 'Accès plateforme, ouverture du dossier et accompagnement des démarches.'}`
+                          : lang === 'en'
+                          ? 'Covers platform access, official registration file creation, and administrative procedures (one-time payment).'
+                          : lang === 'pt'
+                          ? 'Cobre o acesso à plataforma, abertura do processo oficial e trâmites administrativos (pagamento único).'
+                          : 'Inclut les frais de plateforme, l’ouverture officielle du dossier d’inscription et les démarches administratives (règlement unique).'}
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                      <div style={{ fontSize: '1.35rem', fontWeight: 850, color: serviceFeePaid ? '#065f46' : '#1e3a8a' }}>
+                        {formatMoney(serviceFee)}
+                      </div>
+                      {!serviceFeePaid && (
+                        <button
+                          type="button"
+                          className="portal-action-btn"
+                          style={{ background: '#2563eb', display: 'inline-flex', alignItems: 'center', gap: '0.45rem', whiteSpace: 'nowrap' }}
+                          disabled={isProcessingStripe}
+                          onClick={() =>
+                            handleStripePayment(
+                              serviceFee,
+                              lang === 'en'
+                                ? `Service Fees — ${formationTitle}`
+                                : lang === 'pt'
+                                ? `Taxa de Serviço — ${formationTitle}`
+                                : `Frais de Service & Démarches — ${formationTitle}`,
+                              currencyCode,
+                              'service_fee'
+                            )
+                          }
+                        >
+                          <i className="fa-solid fa-credit-card"></i>
+                          <span>
+                            {isProcessingStripe
+                              ? pt.stripeLoading
+                              : lang === 'en'
+                              ? `Pay ${formatMoney(serviceFee)}`
+                              : lang === 'pt'
+                              ? `Pagar ${formatMoney(serviceFee)}`
+                              : `Payer ${formatMoney(serviceFee)}`}
+                          </span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
+
+              {/* BLOC 2 : FRAIS DE SCOLARITÉ (Totalité ou 3 Tranches) */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.75rem' }}>
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '24px',
+                    height: '24px',
+                    borderRadius: '50%',
+                    background: '#0f172a',
+                    color: '#ffffff',
+                    fontSize: '0.75rem',
+                    fontWeight: 800,
+                  }}
+                >
+                  2
+                </span>
+                <strong style={{ fontSize: '0.96rem', color: '#0f172a' }}>
+                  {lang === 'en'
+                    ? `Tuition Fees (${formationTitle})`
+                    : lang === 'pt'
+                    ? `Mensalidades / Ensino (${formationTitle})`
+                    : `2. Frais de Scolarité (${formationTitle})`}
+                </strong>
+              </div>
 
               {/* Sélecteur : Payer la totalité OU Payer en 3 tranches */}
               <div style={{ marginBottom: '1.35rem' }}>
@@ -1369,14 +2315,18 @@ export const StudentPortalPage: React.FC = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '0.85rem' }}>
                   <button
                     type="button"
-                    onClick={() => setPaymentPlanChoice('full')}
+                    disabled={lockedPlan === 'installments'}
+                    onClick={() => {
+                      if (lockedPlan !== 'installments') setPaymentPlanChoice('full');
+                    }}
                     style={{
                       textAlign: 'left',
                       padding: '1rem 1.15rem',
                       borderRadius: '14px',
-                      border: paymentPlanChoice === 'full' ? '2px solid #059669' : '1px solid #cbd5e1',
-                      background: paymentPlanChoice === 'full' ? '#ecfdf5' : '#ffffff',
-                      cursor: 'pointer',
+                      border: effectivePaymentPlan === 'full' ? '2px solid #059669' : '1px solid #cbd5e1',
+                      background: lockedPlan === 'installments' ? '#f8fafc' : effectivePaymentPlan === 'full' ? '#ecfdf5' : '#ffffff',
+                      opacity: lockedPlan === 'installments' ? 0.5 : 1,
+                      cursor: lockedPlan === 'installments' ? 'not-allowed' : 'pointer',
                       transition: 'all 0.2s ease',
                     }}
                   >
@@ -1389,21 +2339,25 @@ export const StudentPortalPage: React.FC = () => {
 
                   <button
                     type="button"
-                    onClick={() => setPaymentPlanChoice('installments')}
+                    disabled={lockedPlan === 'full'}
+                    onClick={() => {
+                      if (lockedPlan !== 'full') setPaymentPlanChoice('installments');
+                    }}
                     style={{
                       textAlign: 'left',
                       padding: '1rem 1.15rem',
                       borderRadius: '14px',
-                      border: paymentPlanChoice === 'installments' ? '2px solid #ea580c' : '1px solid #cbd5e1',
-                      background: paymentPlanChoice === 'installments' ? '#fff7ed' : '#ffffff',
-                      cursor: 'pointer',
+                      border: effectivePaymentPlan === 'installments' ? '2px solid #ea580c' : '1px solid #cbd5e1',
+                      background: lockedPlan === 'full' ? '#f8fafc' : effectivePaymentPlan === 'installments' ? '#fff7ed' : '#ffffff',
+                      opacity: lockedPlan === 'full' ? 0.5 : 1,
+                      cursor: lockedPlan === 'full' ? 'not-allowed' : 'pointer',
                       transition: 'all 0.2s ease',
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                       <strong style={{ fontSize: '0.92rem', color: '#0f172a' }}>{pt.payModeSplitTitle}</strong>
                       <span style={{ fontWeight: 800, color: '#ea580c', fontSize: '0.95rem' }}>
-                        {formatMoney(inst1Amount, currencyCode, false)} + 2×{formatMoney(inst2Amount, currencyCode, false)}
+                        {formatMoney(inst1Amount, currencyCode, false)} + {formatMoney(inst2Amount, currencyCode, false)} + {formatMoney(inst3Amount, currencyCode, false)}
                       </span>
                     </div>
                     <div style={{ fontSize: '0.78rem', color: '#475569' }}>{pt.payModeSplitSub}</div>
@@ -1411,27 +2365,53 @@ export const StudentPortalPage: React.FC = () => {
                 </div>
               </div>
 
-              {paymentPlanChoice === 'full' ? (
+                  {effectivePaymentPlan === 'full' ? (
                 <div className="portal-installment-card active-due" style={{ maxWidth: '520px', borderColor: '#10b981', background: '#f0fdf4' }}>
                   <div className="portal-inst-header">
                     <span className="portal-inst-title">{pt.fullCardTitle}</span>
-                    <span className="portal-status-tag">{pt.fullCardBadge}</span>
+                    <span className="portal-status-tag">
+                      {isFullyPaid
+                        ? lang === 'en' ? 'Paid ✓' : lang === 'pt' ? 'Pago ✓' : 'Réglé ✓'
+                        : pt.fullCardBadge}
+                    </span>
                   </div>
-                  <div className="portal-inst-amount" style={{ color: '#065f46' }}>{formatMoney(totalPrice)}</div>
-                  <div className="portal-inst-due">{pt.fullCardDue}</div>
+                  <div className="portal-inst-amount" style={{ color: '#065f46' }}>
+                    {isFullyPaid ? formatMoney(totalPrice) : formatMoney(remainingAmount > 0 ? remainingAmount : totalPrice)}
+                  </div>
+                  <div className="portal-inst-due">
+                    {hasPaidAtLeastOne && !isFullyPaid
+                      ? `${lang === 'en' ? 'Already paid:' : lang === 'pt' ? 'Já pago:' : 'Déjà payé :'} ${formatMoney(totalPaid)} • ${lang === 'en' ? 'Remaining balance' : lang === 'pt' ? 'Saldo restante' : 'Solde restant'}`
+                      : pt.fullCardDue}
+                  </div>
                   <div style={{ fontSize: '0.8rem', color: '#334155', lineHeight: 1.5, marginBottom: '0.5rem' }}>
                     {pt.fullCardDesc}
                   </div>
-                  <button
-                    type="button"
-                    className="portal-action-btn"
-                    style={{ marginTop: '0.5rem', width: '100%', background: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
-                    disabled={isProcessingStripe}
-                    onClick={() => handleStripePayment(totalPrice, `${pt.fullCardTitle} — ${formationTitle}`, currencyCode)}
-                  >
-                    <i className="fa-brands fa-stripe" style={{ fontSize: '1.4rem' }}></i>
-                    <span>{isProcessingStripe ? pt.stripeLoading : payFullActionText}</span>
-                  </button>
+                  {isFullyPaid ? (
+                    <div style={{ padding: '0.65rem 1rem', borderRadius: '10px', background: '#d1fae5', color: '#065f46', fontWeight: 700, fontSize: '0.85rem', textAlign: 'center' }}>
+                      <i className="fa-solid fa-circle-check"></i> {lang === 'en' ? 'Fully Paid' : lang === 'pt' ? 'Totalmente Pago' : 'Scolarité intégralement réglée'}
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      className="portal-action-btn"
+                      style={{ marginTop: '0.5rem', width: '100%', background: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                      disabled={isProcessingStripe}
+                      onClick={() => handleStripePayment(remainingAmount > 0 ? remainingAmount : totalPrice, `${pt.fullCardTitle} — ${formationTitle}`, currencyCode)}
+                    >
+                      <i className="fa-solid fa-credit-card" style={{ fontSize: '1.1rem' }}></i>
+                      <span>
+                        {isProcessingStripe
+                          ? pt.stripeLoading
+                          : hasPaidAtLeastOne
+                          ? (lang === 'en'
+                              ? `Pay Remaining Balance (${formatMoney(remainingAmount)}) by Bank Card`
+                              : lang === 'pt'
+                              ? `Pagar Saldo Restante (${formatMoney(remainingAmount)}) com Cartão`
+                              : `Régler le solde restant (${formatMoney(remainingAmount)}) par Carte Bancaire`)
+                          : payFullActionText}
+                      </span>
+                    </button>
+                  )}
                 </div>
               ) : (
                 <>
@@ -1441,53 +2421,246 @@ export const StudentPortalPage: React.FC = () => {
                   </div>
 
                   <div className="portal-installments-grid">
-                    <div className="portal-installment-card active-due">
+                    {/* TRANCHE 1 */}
+                    <div
+                      className={`portal-installment-card ${inst1Status === 'paid' ? '' : 'active-due'}`}
+                      style={inst1Status === 'paid' ? { borderColor: '#10b981', background: '#f0fdf4' } : undefined}
+                    >
                       <div className="portal-inst-header">
                         <span className="portal-inst-title">{pt.inst1Title}</span>
-                        <span className="portal-badge-pending-tag">{pt.inst1Badge}</span>
+                        {inst1Status === 'paid' ? (
+                          <span className="portal-status-tag" style={{ background: '#d1fae5', color: '#065f46' }}>
+                            <i className="fa-solid fa-check"></i> {lang === 'en' ? 'Paid' : lang === 'pt' ? 'Pago' : 'Payée'}
+                          </span>
+                        ) : (
+                          <span className="portal-badge-pending-tag">{pt.inst1Badge}</span>
+                        )}
                       </div>
-                      <div className="portal-inst-amount">{formatMoney(inst1Amount)}</div>
-                      <div className="portal-inst-due">{pt.inst1Due}</div>
+                      <div className="portal-inst-amount" style={inst1Status === 'paid' ? { color: '#065f46' } : undefined}>
+                        {formatMoney(inst1Amount)}
+                      </div>
+                      <div className="portal-inst-due">
+                        {inst1Status === 'paid' && rawInstallments[0]?.paid_at
+                          ? `${lang === 'en' ? 'Paid on' : lang === 'pt' ? 'Pago em' : 'Réglée le'} ${rawInstallments[0].paid_at}`
+                          : pt.inst1Due}
+                      </div>
                       <div style={{ fontSize: '0.75rem', color: '#475569' }}>
                         {pt.inst1Desc}
                       </div>
-                      <button
-                        type="button"
-                        className="portal-action-btn"
-                        style={{ marginTop: '0.5rem', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
-                        disabled={isProcessingStripe}
-                        onClick={() => handleStripePayment(inst1Amount, pt.inst1Title, currencyCode)}
-                      >
-                        <i className="fa-brands fa-stripe" style={{ fontSize: '1.4rem' }}></i>
-                        <span>{isProcessingStripe ? pt.stripeLoading : payInst1ActionText}</span>
-                      </button>
+                      {inst1Status !== 'paid' && (
+                        <button
+                          type="button"
+                          className="portal-action-btn"
+                          style={{ marginTop: '0.5rem', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                          disabled={isProcessingStripe}
+                          onClick={() => handleStripePayment(inst1Amount, `${pt.inst1Title} — ${formationTitle}`, currencyCode)}
+                        >
+                          <i className="fa-solid fa-credit-card" style={{ fontSize: '1.1rem' }}></i>
+                          <span>{isProcessingStripe ? pt.stripeLoading : payInst1ActionText}</span>
+                        </button>
+                      )}
                     </div>
 
-                    <div className="portal-installment-card">
+                    {/* TRANCHE 2 */}
+                    <div
+                      className={`portal-installment-card ${inst1Status === 'paid' && inst2Status !== 'paid' ? 'active-due' : ''}`}
+                      style={inst2Status === 'paid' ? { borderColor: '#10b981', background: '#f0fdf4' } : undefined}
+                    >
                       <div className="portal-inst-header">
                         <span className="portal-inst-title">{pt.inst2Title}</span>
-                        <span style={{ fontSize: '0.74rem', color: '#94a3b8' }}>{pt.j5Tag}</span>
+                        {inst2Status === 'paid' ? (
+                          <span className="portal-status-tag" style={{ background: '#d1fae5', color: '#065f46' }}>
+                            <i className="fa-solid fa-check"></i> {lang === 'en' ? 'Paid' : lang === 'pt' ? 'Pago' : 'Payée'}
+                          </span>
+                        ) : inst1Status === 'paid' ? (
+                          <span className="portal-badge-pending-tag">{pt.inst1Badge}</span>
+                        ) : (
+                          <span style={{ fontSize: '0.74rem', color: '#94a3b8' }}>{pt.j5Tag}</span>
+                        )}
                       </div>
-                      <div className="portal-inst-amount">{formatMoney(inst2Amount)}</div>
+                      <div className="portal-inst-amount" style={inst2Status === 'paid' ? { color: '#065f46' } : undefined}>
+                        {formatMoney(inst2Amount)}
+                      </div>
                       <div className="portal-inst-due">{pt.inst2Due}</div>
                       <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
                         {pt.inst2Desc}
                       </div>
+                      {inst1Status === 'paid' && inst2Status !== 'paid' && (
+                        <button
+                          type="button"
+                          className="portal-action-btn"
+                          style={{ marginTop: '0.5rem', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                          disabled={isProcessingStripe}
+                          onClick={() => handleStripePayment(inst2Amount, `${pt.inst2Title} — ${formationTitle}`, currencyCode)}
+                        >
+                          <i className="fa-solid fa-credit-card" style={{ fontSize: '1.1rem' }}></i>
+                          <span>
+                            {isProcessingStripe
+                              ? pt.stripeLoading
+                              : lang === 'en'
+                              ? `Pay ${formatMoney(inst2Amount)} by Bank Card`
+                              : lang === 'pt'
+                              ? `Pagar ${formatMoney(inst2Amount)} com Cartão`
+                              : `Payer ${formatMoney(inst2Amount)} par Carte Bancaire`}
+                          </span>
+                        </button>
+                      )}
                     </div>
 
-                    <div className="portal-installment-card">
+                    {/* TRANCHE 3 */}
+                    <div
+                      className={`portal-installment-card ${inst2Status === 'paid' && inst3Status !== 'paid' ? 'active-due' : ''}`}
+                      style={inst3Status === 'paid' ? { borderColor: '#10b981', background: '#f0fdf4' } : undefined}
+                    >
                       <div className="portal-inst-header">
                         <span className="portal-inst-title">{pt.inst3Title}</span>
-                        <span style={{ fontSize: '0.74rem', color: '#94a3b8' }}>{pt.j5Tag}</span>
+                        {inst3Status === 'paid' ? (
+                          <span className="portal-status-tag" style={{ background: '#d1fae5', color: '#065f46' }}>
+                            <i className="fa-solid fa-check"></i> {lang === 'en' ? 'Paid' : lang === 'pt' ? 'Pago' : 'Payée'}
+                          </span>
+                        ) : inst2Status === 'paid' ? (
+                          <span className="portal-badge-pending-tag">{pt.inst1Badge}</span>
+                        ) : (
+                          <span style={{ fontSize: '0.74rem', color: '#94a3b8' }}>{pt.j5Tag}</span>
+                        )}
                       </div>
-                      <div className="portal-inst-amount">{formatMoney(inst3Amount)}</div>
+                      <div className="portal-inst-amount" style={inst3Status === 'paid' ? { color: '#065f46' } : undefined}>
+                        {formatMoney(inst3Amount)}
+                      </div>
                       <div className="portal-inst-due">{pt.inst3Due}</div>
                       <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                        {pt.inst3Desc}
+                        {lang === 'en'
+                          ? `Final balance for ${formationTitle}.`
+                          : lang === 'pt'
+                          ? `Saldo final do curso ${formationTitle}.`
+                          : `Solde final de la formation ${formationTitle}.`}
                       </div>
+                      {inst2Status === 'paid' && inst3Status !== 'paid' && (
+                        <button
+                          type="button"
+                          className="portal-action-btn"
+                          style={{ marginTop: '0.5rem', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                          disabled={isProcessingStripe}
+                          onClick={() => handleStripePayment(inst3Amount, `${pt.inst3Title} — ${formationTitle}`, currencyCode)}
+                        >
+                          <i className="fa-solid fa-credit-card" style={{ fontSize: '1.1rem' }}></i>
+                          <span>
+                            {isProcessingStripe
+                              ? pt.stripeLoading
+                              : lang === 'en'
+                              ? `Pay ${formatMoney(inst3Amount)} by Bank Card`
+                              : lang === 'pt'
+                              ? `Pagar ${formatMoney(inst3Amount)} com Cartão`
+                              : `Payer ${formatMoney(inst3Amount)} par Carte Bancaire`}
+                          </span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 </>
+              )}
+
+              {/* Historique des paiements confirmés */}
+              {latestEnrollment?.payments && latestEnrollment.payments.length > 0 && (
+                <div style={{ marginTop: '1.5rem', padding: '1rem 1.15rem', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                  <h4 style={{ fontSize: '0.88rem', fontWeight: 750, color: '#0f172a', margin: '0 0 0.75rem 0' }}>
+                    <i className="fa-solid fa-clock-rotate-left" style={{ color: '#059669', marginRight: '6px' }}></i>
+                    {lang === 'en' ? 'Confirmed Payments History' : lang === 'pt' ? 'Histórico de Pagamentos Confirmados' : 'Historique de vos paiements confirmés'}
+                  </h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {latestEnrollment.payments.map((p, idx) => {
+                      const isServiceFeePayment = p.purpose === 'service_fee';
+                      const tuitionIdx = latestEnrollment.payments!
+                        .slice(0, idx + 1)
+                        .filter((item) => item.purpose !== 'service_fee').length;
+                      const purposeLabel = isServiceFeePayment
+                        ? lang === 'en'
+                          ? 'Service & Registration Fees'
+                          : lang === 'pt'
+                          ? 'Taxa de Serviço & Matrícula'
+                          : 'Frais de Service & Démarches'
+                        : `${formationTitle} — ${
+                            confirmedPaymentsList.length === 1 && p.amount >= totalPrice - 0.5
+                              ? lang === 'en'
+                                ? 'Full Tuition'
+                                : lang === 'pt'
+                                ? 'Mensalidade Integral'
+                                : 'Scolarité Complète'
+                              : `${lang === 'en' ? 'Installment' : lang === 'pt' ? 'Parcela' : 'Tranche'} ${tuitionIdx}`
+                          }`;
+
+                      return (
+                      <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.6rem', fontSize: '0.82rem', padding: '0.6rem 0.85rem', background: '#ffffff', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          <strong style={{ color: '#065f46' }}>{formatMoney(p.amount, p.currency)}</strong>
+                          <span
+                            style={{
+                              padding: '2px 8px',
+                              borderRadius: '999px',
+                              fontSize: '0.72rem',
+                              fontWeight: 700,
+                              background: isServiceFeePayment ? '#dbeafe' : '#dcfce7',
+                              color: isServiceFeePayment ? '#1e40af' : '#166534',
+                            }}
+                          >
+                            {isServiceFeePayment
+                              ? lang === 'en' ? 'Service Fees' : lang === 'pt' ? 'Taxa de Serviço' : 'Frais de Service'
+                              : lang === 'en' ? 'Tuition' : lang === 'pt' ? 'Scolaridade' : 'Scolarité'}
+                          </span>
+                          <span style={{ color: '#64748b' }}>
+                            {p.method === 'bank_transfer' ? 'Virement Bancaire' : 'Carte Bancaire'}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', color: '#475569', fontSize: '0.78rem' }}>
+                          <span>
+                            {p.confirmed_at || 'Confirmé'} • <span style={{ color: '#059669', fontWeight: 700 }}>✓ Encaissé</span>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              openOfficialReceipt(
+                                {
+                                  receiptNumber: `REC-${new Date().getFullYear()}-${String(p.id).padStart(5, '0')}`,
+                                  date: p.confirmed_at || new Date().toLocaleDateString('fr-FR'),
+                                  studentName: fullName,
+                                  studentPhone: user?.profile?.phone || '',
+                                  studentEmail: user?.email || '',
+                                  amountFormatted: formatMoney(p.amount, p.currency),
+                                  amountNumber: Number(p.amount),
+                                  currency: p.currency,
+                                  paymentMethod: p.method,
+                                  gatewayReference: p.gateway_reference,
+                                  purpose: purposeLabel,
+                                },
+                                siteSettings,
+                                lang
+                              )
+                            }
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '5px',
+                              padding: '0.35rem 0.7rem',
+                              borderRadius: '8px',
+                              border: '1px solid #cbd5e1',
+                              background: '#f8fafc',
+                              color: '#0f172a',
+                              fontWeight: 700,
+                              fontSize: '0.75rem',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <i className="fa-solid fa-file-arrow-down" style={{ color: '#059669' }}></i>
+                            <span>
+                              {lang === 'en' ? 'Receipt' : lang === 'pt' ? 'Recibo' : 'Télécharger le reçu'}
+                            </span>
+                          </button>
+                        </div>
+                      </div>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
 
               <div style={{ marginTop: '1.75rem', paddingTop: '1.25rem', borderTop: '1px solid #f1f5f9' }}>
@@ -1564,42 +2737,208 @@ export const StudentPortalPage: React.FC = () => {
               </div>
 
               <div className="portal-docs-stack">
-                <div className="portal-doc-entry">
-                  <div className="portal-doc-info-block">
-                    <i className="fa-solid fa-file-pdf portal-doc-icon-red"></i>
-                    <div>
-                      <div className="title">{pt.doc1Title}</div>
-                      <div className="status">{pt.doc1Sub}</div>
-                    </div>
-                  </div>
-                  <span className="portal-badge-pending-tag">{pt.doc1Badge}</span>
-                </div>
+                {(() => {
+                  const adminDocs = user?.official_documents || [];
+                  const findDoc = (keywords: string[]) =>
+                    adminDocs.find((d) =>
+                      keywords.some((k) => d.title.toLowerCase().includes(k))
+                    );
 
-                <a href="#garantie-pdf" className="portal-doc-entry">
-                  <div className="portal-doc-info-block">
-                    <i className="fa-solid fa-file-shield" style={{ color: '#00a859', fontSize: '1.2rem' }}></i>
-                    <div>
-                      <div className="title">{pt.doc2Title}</div>
-                      <div className="status">{pt.doc2Sub}</div>
-                    </div>
-                  </div>
-                  <span className="portal-btn-download-pill">
-                    <i className="fa-solid fa-download"></i> {pt.download}
-                  </span>
-                </a>
+                  const docAttestation = findDoc(['attestation', 'certificat', 'inscription']);
+                  const docContrat = findDoc(['contrat', 'garantie', 'remboursement']);
+                  const docFiche = findDoc(['fiche', 'candidature']);
+                  const docGuide = findDoc(['guide', 'installation', 'visa']);
 
-                <a href="#guide-consulaire" className="portal-doc-entry">
-                  <div className="portal-doc-info-block">
-                    <i className="fa-solid fa-book" style={{ color: '#1877f2', fontSize: '1.2rem' }}></i>
-                    <div>
-                      <div className="title">{pt.doc4Title}</div>
-                      <div className="status">{pt.doc4Sub}</div>
-                    </div>
-                  </div>
-                  <span className="portal-btn-download-pill">
-                    <i className="fa-solid fa-download"></i> {pt.consult}
-                  </span>
-                </a>
+                  const matchedIds = new Set(
+                    [docAttestation, docContrat, docFiche, docGuide]
+                      .filter(Boolean)
+                      .map((d) => d!.id)
+                  );
+                  const extraDocs = adminDocs.filter((d) => !matchedIds.has(d.id));
+
+                  return (
+                    <>
+                      {/* 1. Attestation d'Inscription */}
+                      {docAttestation?.file_url ? (
+                        <a
+                          href={docAttestation.file_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          download
+                          className="portal-doc-entry"
+                        >
+                          <div className="portal-doc-info-block">
+                            <i className="fa-solid fa-file-pdf portal-doc-icon-red"></i>
+                            <div>
+                              <div className="title">{docAttestation.title}</div>
+                              <div className="status">
+                                {docAttestation.issued_at ? `Délivrée le ${docAttestation.issued_at}` : pt.doc1Sub}
+                              </div>
+                            </div>
+                          </div>
+                          <span className="portal-btn-download-pill">
+                            <i className="fa-solid fa-download"></i> {pt.download}
+                          </span>
+                        </a>
+                      ) : (
+                        <div className="portal-doc-entry">
+                          <div className="portal-doc-info-block">
+                            <i className="fa-solid fa-file-pdf portal-doc-icon-red"></i>
+                            <div>
+                              <div className="title">{pt.doc1Title}</div>
+                              <div className="status">{pt.doc1Sub}</div>
+                            </div>
+                          </div>
+                          <span className={hasPaidAtLeastOne ? 'portal-status-tag' : 'portal-badge-pending-tag'}>
+                            {hasPaidAtLeastOne
+                              ? lang === 'en'
+                                ? 'In Progress (Paid)'
+                                : lang === 'pt'
+                                ? 'Em emissão (Pago)'
+                                : 'En cours d’émission'
+                              : pt.doc1Badge}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* 2. Contrat & Garantie 85% */}
+                      {docContrat?.file_url ? (
+                        <a
+                          href={docContrat.file_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          download
+                          className="portal-doc-entry"
+                        >
+                          <div className="portal-doc-info-block">
+                            <i className="fa-solid fa-file-shield" style={{ color: '#00a859', fontSize: '1.2rem' }}></i>
+                            <div>
+                              <div className="title">{docContrat.title}</div>
+                              <div className="status">
+                                {docContrat.issued_at ? `Délivré le ${docContrat.issued_at}` : pt.doc2Sub}
+                              </div>
+                            </div>
+                          </div>
+                          <span className="portal-btn-download-pill">
+                            <i className="fa-solid fa-download"></i> {pt.download}
+                          </span>
+                        </a>
+                      ) : (
+                        <div className="portal-doc-entry">
+                          <div className="portal-doc-info-block">
+                            <i className="fa-solid fa-file-shield" style={{ color: '#00a859', fontSize: '1.2rem' }}></i>
+                            <div>
+                              <div className="title">{pt.doc2Title}</div>
+                              <div className="status">{pt.doc2Sub}</div>
+                            </div>
+                          </div>
+                          <span className="portal-badge-pending-tag">
+                            {lang === 'en' ? 'Pending' : lang === 'pt' ? 'Em preparação' : 'En préparation'}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* 3. Fiche de Candidature */}
+                      {docFiche?.file_url ? (
+                        <a
+                          href={docFiche.file_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          download
+                          className="portal-doc-entry"
+                        >
+                          <div className="portal-doc-info-block">
+                            <i className="fa-solid fa-file-pdf portal-doc-icon-red"></i>
+                            <div>
+                              <div className="title">{docFiche.title}</div>
+                              <div className="status">
+                                {docFiche.issued_at ? `Délivrée le ${docFiche.issued_at}` : `Réf ${candidateNumber}`}
+                              </div>
+                            </div>
+                          </div>
+                          <span className="portal-btn-download-pill">
+                            <i className="fa-solid fa-download"></i> {pt.download}
+                          </span>
+                        </a>
+                      ) : (
+                        <div className="portal-doc-entry">
+                          <div className="portal-doc-info-block">
+                            <i className="fa-solid fa-file-pdf portal-doc-icon-red"></i>
+                            <div>
+                              <div className="title">{pt.doc3Title}</div>
+                              <div className="status">Réf {candidateNumber}</div>
+                            </div>
+                          </div>
+                          <span className="portal-badge-pending-tag">
+                            {lang === 'en' ? 'Pending' : lang === 'pt' ? 'Em preparação' : 'En préparation'}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* 4. Guide d'Installation & Visa */}
+                      {docGuide?.file_url ? (
+                        <a
+                          href={docGuide.file_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          download
+                          className="portal-doc-entry"
+                        >
+                          <div className="portal-doc-info-block">
+                            <i className="fa-solid fa-book" style={{ color: '#1877f2', fontSize: '1.2rem' }}></i>
+                            <div>
+                              <div className="title">{docGuide.title}</div>
+                              <div className="status">
+                                {docGuide.issued_at ? `Délivré le ${docGuide.issued_at}` : pt.doc4Sub}
+                              </div>
+                            </div>
+                          </div>
+                          <span className="portal-btn-download-pill">
+                            <i className="fa-solid fa-download"></i> {pt.consult}
+                          </span>
+                        </a>
+                      ) : (
+                        <div className="portal-doc-entry">
+                          <div className="portal-doc-info-block">
+                            <i className="fa-solid fa-book" style={{ color: '#1877f2', fontSize: '1.2rem' }}></i>
+                            <div>
+                              <div className="title">{pt.doc4Title}</div>
+                              <div className="status">{pt.doc4Sub}</div>
+                            </div>
+                          </div>
+                          <span className="portal-badge-pending-tag">
+                            {lang === 'en' ? 'Pending' : lang === 'pt' ? 'Em preparação' : 'En préparation'}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Autres documents officiels envoyés par l'admin */}
+                      {extraDocs.map((doc) => (
+                        <a
+                          key={doc.id}
+                          href={doc.file_url || '#'}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          download
+                          className="portal-doc-entry"
+                        >
+                          <div className="portal-doc-info-block">
+                            <i className="fa-solid fa-file-circle-check" style={{ color: '#059669', fontSize: '1.2rem' }}></i>
+                            <div>
+                              <div className="title">{doc.title}</div>
+                              <div className="status">
+                                {doc.issued_at ? `Envoyé le ${doc.issued_at}` : 'Document officiel'}
+                              </div>
+                            </div>
+                          </div>
+                          <span className="portal-btn-download-pill">
+                            <i className="fa-solid fa-download"></i> {pt.download}
+                          </span>
+                        </a>
+                      ))}
+                    </>
+                  );
+                })()}
               </div>
             </div>
           )}
@@ -1616,17 +2955,287 @@ export const StudentPortalPage: React.FC = () => {
                 {pt.reqInfo}
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                <div className="portal-doc-entry">
-                  <div className="portal-doc-info-block">
-                    <i className="fa-solid fa-envelope-open-text" style={{ color: '#1877f2', fontSize: '1.15rem' }}></i>
-                    <div>
-                      <div className="title">{pt.reqItemTitle}</div>
-                      <div className="status">{pt.reqItemSub}</div>
-                    </div>
-                  </div>
-                  <span className="portal-status-tag">{pt.reqItemTag}</span>
+              {/* Formulaire d'envoi d'une nouvelle demande avec pièce jointe */}
+              <form
+                onSubmit={handleCreateRequest}
+                style={{
+                  background: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '14px',
+                  padding: '1.15rem 1.25rem',
+                  marginBottom: '1.5rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.85rem',
+                }}
+              >
+                <div style={{ fontWeight: 750, fontSize: '0.92rem', color: '#0f172a' }}>
+                  <i className="fa-solid fa-paper-plane" style={{ color: '#059669', marginRight: '6px' }}></i>
+                  {lang === 'en'
+                    ? 'Submit a New Request to Administration'
+                    : lang === 'pt'
+                    ? 'Enviar uma Nova Solicitação à Administração'
+                    : 'Envoyer une nouvelle demande à l’administration'}
                 </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.85rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#334155' }}>
+                      {lang === 'en' ? 'Request Type *' : lang === 'pt' ? 'Tipo de Solicitação *' : 'Type de demande *'}
+                    </label>
+                    <select
+                      value={reqType}
+                      onChange={(e) => setReqType(e.target.value as any)}
+                      style={{
+                        padding: '0.6rem 0.75rem',
+                        borderRadius: '10px',
+                        border: '1px solid #cbd5e1',
+                        background: '#ffffff',
+                        fontSize: '0.86rem',
+                        color: '#0f172a',
+                      }}
+                    >
+                      <option value="other">{lang === 'en' ? 'General / Administrative Request' : lang === 'pt' ? 'Solicitação Administrativa' : 'Demande administrative / Autre'}</option>
+                      <option value="city_change">{lang === 'en' ? 'Host City Change' : lang === 'pt' ? 'Mudança de Cidade' : 'Changement de Ville d’Accueil'}</option>
+                      <option value="a1_brazil">{lang === 'en' ? 'Early A1 Admission in Brazil' : lang === 'pt' ? 'Admissão A1 Presencial no Brasil' : 'Inscription Anticipée A1 Présentiel Brésil'}</option>
+                      <option value="offer_access">{lang === 'en' ? 'Special Offer / Exception' : lang === 'pt' ? 'Oferta Especial / Exceção' : 'Demande de dérogation / Offre spéciale'}</option>
+                    </select>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#334155' }}>
+                      {lang === 'en' ? 'Subject *' : lang === 'pt' ? 'Assunto *' : 'Objet de votre demande *'}
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={reqSubject}
+                      onChange={(e) => setReqSubject(e.target.value)}
+                      placeholder={lang === 'en' ? 'E.g. Passport update or city transfer' : lang === 'pt' ? 'Ex: Atualização de documento' : 'Ex: Demande d’attestation ou changement de ville'}
+                      style={{
+                        padding: '0.6rem 0.75rem',
+                        borderRadius: '10px',
+                        border: '1px solid #cbd5e1',
+                        background: '#ffffff',
+                        fontSize: '0.86rem',
+                        color: '#0f172a',
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#334155' }}>
+                    {lang === 'en' ? 'Detailed Message *' : lang === 'pt' ? 'Mensagem detalhada *' : 'Message détaillé *'}
+                  </label>
+                  <textarea
+                    required
+                    rows={3}
+                    value={reqMessage}
+                    onChange={(e) => setReqMessage(e.target.value)}
+                    placeholder={lang === 'en' ? 'Explain your request clearly...' : lang === 'pt' ? 'Descreva sua solicitação...' : 'Expliquez clairement votre demande à l’administration...'}
+                    style={{
+                      padding: '0.65rem 0.75rem',
+                      borderRadius: '10px',
+                      border: '1px solid #cbd5e1',
+                      background: '#ffffff',
+                      fontSize: '0.86rem',
+                      color: '#0f172a',
+                      resize: 'vertical',
+                      fontFamily: 'inherit',
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.85rem' }}>
+                  <label
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '0.5rem 0.85rem',
+                      borderRadius: '10px',
+                      border: reqFile ? '1px solid #10b981' : '1px dashed #94a3b8',
+                      background: reqFile ? '#ecfdf5' : '#ffffff',
+                      color: reqFile ? '#065f46' : '#334155',
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <i className={reqFile ? 'fa-solid fa-file-circle-check' : 'fa-solid fa-paperclip'}></i>
+                    <span>
+                      {reqFile
+                        ? reqFile.name
+                        : lang === 'en'
+                        ? 'Attach a supporting document (PDF, JPG, PNG)'
+                        : lang === 'pt'
+                        ? 'Anexar documento (PDF, JPG, PNG)'
+                        : 'Joindre un document justificatif (PDF, JPG, PNG)'}
+                    </span>
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx"
+                      style={{ display: 'none' }}
+                      onChange={(e) => setReqFile(e.target.files?.[0] || null)}
+                    />
+                  </label>
+
+                  <button
+                    type="submit"
+                    className="portal-action-btn"
+                    style={{ background: '#059669' }}
+                    disabled={isSendingReq}
+                  >
+                    <i className="fa-solid fa-paper-plane"></i>{' '}
+                    {isSendingReq
+                      ? lang === 'en' ? 'Sending...' : lang === 'pt' ? 'Enviando...' : 'Envoi en cours...'
+                      : lang === 'en' ? 'Send Request' : lang === 'pt' ? 'Enviar Solicitação' : 'Envoyer ma demande'}
+                  </button>
+                </div>
+              </form>
+
+              {/* Liste des demandes envoyées et retours de l'administration */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+                {studentRequests.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '1.5rem', color: '#64748b', fontSize: '0.86rem', border: '1px dashed #cbd5e1', borderRadius: '12px' }}>
+                    {lang === 'en'
+                      ? 'You have not submitted any requests yet.'
+                      : lang === 'pt'
+                      ? 'Você ainda não enviou nenhuma solicitação.'
+                      : 'Vous n’avez pas encore envoyé de demande à l’administration.'}
+                  </div>
+                ) : (
+                  studentRequests.map((req) => {
+                    const statusMap: Record<string, { label: string; bg: string; color: string }> = {
+                      open: { label: lang === 'en' ? 'In Review' : lang === 'pt' ? 'Em Análise' : 'En cours d’examen', bg: '#fef3c7', color: '#92400e' },
+                      awaiting_student: { label: lang === 'en' ? 'Info Needed' : lang === 'pt' ? 'Aguardando Aluno' : 'Attente retour', bg: '#e0f2fe', color: '#075985' },
+                      approved: { label: lang === 'en' ? 'Approved' : lang === 'pt' ? 'Aprovada' : 'Approuvée', bg: '#d1fae5', color: '#065f46' },
+                      rejected: { label: lang === 'en' ? 'Rejected' : lang === 'pt' ? 'Recusada' : 'Refusée', bg: '#fee2e2', color: '#991b1b' },
+                      cancelled: { label: lang === 'en' ? 'Cancelled' : lang === 'pt' ? 'Cancelada' : 'Annulée', bg: '#f1f5f9', color: '#475569' },
+                    };
+                    const st = statusMap[req.status] || statusMap.open;
+
+                    return (
+                      <div
+                        key={req.id}
+                        style={{
+                          padding: '1rem 1.15rem',
+                          borderRadius: '12px',
+                          border: '1px solid #e2e8f0',
+                          background: '#ffffff',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '0.65rem',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+                          <div>
+                            <div style={{ fontWeight: 750, fontSize: '0.92rem', color: '#0f172a' }}>
+                              {req.reference} : {req.subject}
+                            </div>
+                            <div style={{ fontSize: '0.76rem', color: '#64748b' }}>
+                              {lang === 'en' ? 'Submitted on' : lang === 'pt' ? 'Enviada em' : 'Envoyée le'} {req.created_at || '—'}
+                            </div>
+                          </div>
+                          <span
+                            style={{
+                              padding: '4px 10px',
+                              borderRadius: '999px',
+                              fontSize: '0.75rem',
+                              fontWeight: 700,
+                              background: st.bg,
+                              color: st.color,
+                            }}
+                          >
+                            {st.label}
+                          </span>
+                        </div>
+
+                        {req.message && (
+                          <div style={{ fontSize: '0.84rem', color: '#334155', lineHeight: 1.5 }}>
+                            {req.message}
+                          </div>
+                        )}
+
+                        {req.attachment_url && (
+                          <div>
+                            <a
+                              href={req.attachment_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                fontSize: '0.78rem',
+                                fontWeight: 700,
+                                color: '#2563eb',
+                                textDecoration: 'none',
+                                padding: '4px 10px',
+                                borderRadius: '8px',
+                                background: '#eff6ff',
+                              }}
+                            >
+                              <i className="fa-solid fa-paperclip"></i>
+                              <span>{req.attachment_name || 'Document joint'}</span>
+                            </a>
+                          </div>
+                        )}
+
+                        {/* Retour / Réponse de l'administration */}
+                        {(req.decision_note || req.admin_attachment_url) && (
+                          <div
+                            style={{
+                              marginTop: '0.25rem',
+                              padding: '0.75rem 0.95rem',
+                              borderRadius: '10px',
+                              background: '#f0fdf4',
+                              border: '1px solid #bbf7d0',
+                            }}
+                          >
+                            <div style={{ fontSize: '0.76rem', fontWeight: 800, color: '#065f46', marginBottom: '4px' }}>
+                              <i className="fa-solid fa-reply" style={{ marginRight: '5px' }}></i>
+                              {lang === 'en' ? 'Administration Response' : lang === 'pt' ? 'Resposta da Administração' : 'Réponse de l’Administration'}
+                              {req.resolved_at ? ` (${req.resolved_at})` : ''}
+                            </div>
+                            {req.decision_note && (
+                              <div style={{ fontSize: '0.84rem', color: '#14532d', lineHeight: 1.45 }}>
+                                {req.decision_note}
+                              </div>
+                            )}
+                            {req.admin_attachment_url && (
+                              <a
+                                href={req.admin_attachment_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                download
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '6px',
+                                  marginTop: '6px',
+                                  fontSize: '0.78rem',
+                                  fontWeight: 700,
+                                  color: '#065f46',
+                                  textDecoration: 'none',
+                                  padding: '4px 10px',
+                                  borderRadius: '8px',
+                                  background: '#d1fae5',
+                                }}
+                              >
+                                <i className="fa-solid fa-download"></i>
+                                <span>
+                                  {lang === 'en' ? 'Download attached response document' : lang === 'pt' ? 'Baixar documento de resposta' : 'Télécharger le document joint par l’administration'}
+                                </span>
+                              </a>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </div>
           )}

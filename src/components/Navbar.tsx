@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage, LANGUAGE_LABELS, type Language } from '../i18n/LanguageContext';
+import { useSiteSettings } from './SiteSettingsContext';
 
 interface NavbarProps {
   onOpenRegister: () => void;
@@ -8,6 +9,7 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister }) => {
   const { lang, setLang, t } = useLanguage();
+  const siteSettings = useSiteSettings();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -50,16 +52,20 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister }) => {
     <>
       <header className={`site-header ${isScrolled ? 'is-scrolled' : ''}`}>
         <div className="header-inner">
-          {/* Logo Brasil·É avec B Majuscule */}
+          {/* Logo dynamique configuré par l'admin */}
           <Link to="/" className="brand-logo" onClick={handleNavClick}>
             <div className="brand-icon-circle">
-              <img src="/logo.png" alt="Brasil·É" />
+              <img src={siteSettings.logo_url || '/logo.png'} alt={siteSettings.site_name} />
             </div>
             <div className="brand-text-block">
               <span className="brand-name">
-                Brasil<span className="accent">·É</span>
+                {siteSettings.site_name === 'Brasil·É' ? (
+                  <>Brasil<span className="accent">·É</span></>
+                ) : (
+                  siteSettings.site_name
+                )}
               </span>
-              <span className="brand-tagline">{t.nav.tagline}</span>
+              <span className="brand-tagline">{siteSettings.tagline || t.nav.tagline}</span>
             </div>
           </Link>
 
@@ -165,13 +171,17 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister }) => {
             <div className="mobile-drawer-header">
               <div className="brand-logo">
                 <div className="brand-icon-circle">
-                  <img src="/logo.png" alt="Brasil·É" />
+                  <img src={siteSettings.logo_url || '/logo.png'} alt={siteSettings.site_name} />
                 </div>
                 <div className="brand-text-block">
                   <span className="brand-name">
-                    Brasil<span className="accent">·É</span>
+                    {siteSettings.site_name === 'Brasil·É' ? (
+                      <>Brasil<span className="accent">·É</span></>
+                    ) : (
+                      siteSettings.site_name
+                    )}
                   </span>
-                  <span className="brand-tagline">{t.nav.tagline}</span>
+                  <span className="brand-tagline">{siteSettings.tagline || t.nav.tagline}</span>
                 </div>
               </div>
               <button

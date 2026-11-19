@@ -19,7 +19,7 @@ export const FaqSection: React.FC = () => {
     },
     {
       q: 'Quels sont les modes de paiement acceptés et en quelles devises ?',
-      a: 'Nous acceptons les règlements par virement bancaire international ainsi que les règlements directs. Tous les tarifs peuvent être affichés et réglés en Euros (€) ou en Francs CFA (XOF) selon le taux officiel internet en temps réel (1 € = 655,96 FCFA). Des facilités de paiement échelonné sont également accordées sur demande.',
+      a: 'Nous acceptons les règlements par virement bancaire international ainsi que les règlements par carte bancaire. Tous les tarifs peuvent être affichés et réglés en Euros (€), en Francs CFA (XOF) ou en Real Brésilien (BRL / R$) selon le taux officiel internet en temps réel. Des facilités de paiement échelonné sont également accordées sur demande.',
     },
     {
       q: 'L’école aide-t-elle à trouver un logement et à s’installer au Brésil ?',

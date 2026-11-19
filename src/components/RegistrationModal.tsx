@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { Program } from '../types';
 import { X, CheckCircle, ShieldCheck, ArrowRight, User, Mail, Phone, MapPin, BookOpen, GraduationCap } from 'lucide-react';
 import { API_ENDPOINTS } from '../config/api';
+import { useToast } from './ToastContext';
 
 interface RegistrationModalProps {
   isOpen: boolean;
@@ -24,17 +25,17 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
   const [level, setLevel] = useState(selectedProgram?.level || 'Niveau A1 Débutant');
   const [city, setCity] = useState(selectedProgram?.city || 'Brasília (Capitale)');
   const [studyMode, setStudyMode] = useState(selectedProgram?.studyMode || 'Présentiel au Brésil');
+  const toast = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
 
   const currentPriceEur = selectedProgram?.priceEur || (studyMode.includes('Ligne') ? 350 : 850);
   const xof = Math.round(currentPriceEur * 655.957).toLocaleString('fr-FR');
+  const brl = (currentPriceEur * 6.15).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setErrorMsg('');
 
     try {
       const res = await fetch(API_ENDPOINTS.register, {
@@ -55,16 +56,17 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
 
       const data = await res.json();
       if (res.ok || data.success || data.user) {
+        toast.success('Demande enregistrée avec succès !');
         setIsSuccess(true);
       } else {
         if (data.message && data.message.includes('already been taken')) {
-          setIsSuccess(true);
+          toast.error('Cette adresse e-mail est déjà utilisée.');
         } else {
-          setErrorMsg(data.message || 'Une erreur est survenue lors de l’envoi. Veuillez réessayer.');
+          toast.error(data.message || 'Une erreur est survenue lors de l’envoi. Veuillez réessayer.');
         }
       }
     } catch {
-      setIsSuccess(true);
+      toast.error('Impossible de contacter le serveur. Veuillez réessayer.');
     } finally {
       setIsSubmitting(false);
     }
@@ -115,8 +117,6 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="modal-form">
-            {errorMsg && <div className="modal-error-alert">{errorMsg}</div>}
-
             {step === 1 && (
               <div className="modal-step-body">
                 <div className="form-group">
@@ -148,6 +148,7 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
                       onChange={(e) => setStudyMode(e.target.value)}
                     >
                       <option value="Présentiel au Brésil">Présentiel au Brésil (Visa VITEM IV)</option>
+                      <option value="Présentiel au Brésil (Visa Visiteur)">Présentiel au Brésil (Visa Visiteur)</option>
                       <option value="100% En Ligne">100% En Ligne (Depuis l’Afrique)</option>
                     </select>
                   </div>
@@ -177,7 +178,7 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
                     <span>Tarif Officiel de la Formation :</span>
                   </div>
                   <div className="modal-main-price">{currentPriceEur} €</div>
-                  <div className="modal-sub-price">≈ {xof} FCFA (Montant fixé par l’administration)</div>
+                  <div className="modal-sub-price">≈ {xof} FCFA • R$ {brl} (Montant fixé par l’administration)</div>
                   {studyMode.includes('Brésil') && (
                     <div className="modal-guarantee-note">
                       <ShieldCheck size={16} className="text-emerald-500" />
