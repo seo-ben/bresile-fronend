@@ -677,3 +677,79 @@
   .ring-4 { width: 840px; height: 840px; }
   .ring-5 { width: 1040px; height: 1040px; }
 }
+
+/* --------------------------------------------------------------------------
+   Créneau Horaire & Tarification Modulée (Cours du jour / Cours du soir)
+   -------------------------------------------------------------------------- */
+.glass-rhythm-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.glass-rhythm-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 12px;
+  border: 1.5px solid rgba(15, 23, 42, 0.14);
+  background: rgba(255, 255, 255, 0.86);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  font-family: inherit;
+}
+
+.glass-rhythm-card:hover {
+  border-color: #1e3a8a;
+  background: #ffffff;
+}
+
+.glass-rhythm-card.active {
+  border-color: #1e3a8a;
+  background: rgba(239, 246, 255, 0.95);
+  box-shadow: 0 4px 12px rgba(30, 58, 138, 0.12);
+}
+
+.glass-rhythm-top {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.glass-rhythm-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.glass-rhythm-price {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #047857;
+  background: #ecfdf5;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.glass-rhythm-price.evening {
+  color: #b45309;
+  background: #fffbeb;
+}
+
+.glass-rhythm-hours {
+  font-size: 0.76rem;
+  color: #475569;
+  font-weight: 500;
+}
+
+@media (max-width: 560px) {
+  .glass-rhythm-grid {
+    grid-template-columns: 1fr;
+  }
+}

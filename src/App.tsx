@@ -7,6 +7,7 @@ import { useScrollReveal } from './hooks/useScrollReveal';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
 import { EducationalShowcase } from './components/EducationalShowcase';
+import { EnrollmentArchitectureDiagram } from './components/EnrollmentArchitectureDiagram';
 import { MobilityTimeline } from './components/MobilityTimeline';
 import { AcademicPartners } from './components/AcademicPartners';
 import { TrustGuarantee } from './components/TrustGuarantee';
@@ -16,6 +17,8 @@ import { Footer } from './components/Footer';
 import { RegistrationPage } from './pages/RegistrationPage';
 import { LoginPage } from './pages/LoginPage';
 import { StudentPortalPage } from './pages/StudentPortalPage';
+import { AboutPage } from './pages/AboutPage';
+import { VerifyCertificatePage } from './pages/VerifyCertificatePage';
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -62,6 +65,11 @@ export function HomePage() {
         onSelectUniversity={(sigle) => handleGoToRegister(sigle)}
       />
 
+      {/* SESSION 4B : Schéma d'architecture de votre procédure (piloté par l'admin) */}
+      <EnrollmentArchitectureDiagram
+        onOpenRegister={() => handleGoToRegister()}
+      />
+
       {/* SESSION 5 : Manifeste de Confiance & Garantie Contractuelle 85% */}
       <TrustGuarantee />
 
@@ -90,6 +98,8 @@ export function App() {
             <Route path="/connexion" element={<LoginPage />} />
             <Route path="/portail" element={<StudentPortalPage />} />
             <Route path="/espace-etudiant" element={<StudentPortalPage />} />
+            <Route path="/a-propos" element={<AboutPage />} />
+            <Route path="/verifier-attestation" element={<VerifyCertificatePage />} />
             <Route path="*" element={<HomePage />} />
           </Routes>
         </ToastProvider>

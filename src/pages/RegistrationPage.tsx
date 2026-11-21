@@ -19,10 +19,21 @@ interface PartnerOption {
   city: string;
 }
 
+interface LevelOfferOption {
+  study_mode: string;
+  base_price: number;
+  evening_enabled?: boolean;
+  evening_base_price?: number | null;
+  day_schedule_label?: string | null;
+  evening_schedule_label?: string | null;
+  currency?: string;
+}
+
 interface LevelOption {
   id: number;
   code: string;
   name: string;
+  offers?: LevelOfferOption[];
 }
 
 interface CityOption {
@@ -115,6 +126,7 @@ export const RegistrationPage: React.FC = () => {
   const [desiredLevel, setDesiredLevel] = useState(preselectedLevel);
   const [previousLevelFile, setPreviousLevelFile] = useState<File | null>(null);
   const [studyMode, setStudyMode] = useState(preselectedMode);
+  const [rhythm, setRhythm] = useState<'day' | 'evening'>('day');
   const [studyPurpose, setStudyPurpose] = useState('etudes_superieures');
   const [cityChoice, setCityChoice] = useState('Brasília (Capitale)');
   const [targetUniversity, setTargetUniversity] = useState(preselectedUniversity);
@@ -130,6 +142,22 @@ export const RegistrationPage: React.FC = () => {
   // Déterminer si le niveau sélectionné est supérieur à A1 et quel niveau précédent justifier
   const selectedLevelIdx = levels.findIndex((l) => l.name === desiredLevel || l.code === desiredLevel);
   const requiredPreviousLevel = selectedLevelIdx > 0 ? levels[selectedLevelIdx - 1] : null;
+  const selectedLevelObjForOffer = selectedLevelIdx >= 0 ? levels[selectedLevelIdx] : levels[0];
+  const isOnlineSelected = studyMode.toLowerCase().includes('ligne') || studyMode.toLowerCase().includes('online');
+  const targetOfferMode = isOnlineSelected ? 'remote_home_country' : 'in_person_brazil';
+  const matchedOffer =
+    selectedLevelObjForOffer?.offers?.find((o) => o.study_mode === targetOfferMode) ||
+    selectedLevelObjForOffer?.offers?.[0] ||
+    null;
+  const showScheduleSelector = isOnlineSelected || Boolean(matchedOffer?.evening_enabled);
+  const formatOfferPrice = (amount?: number | null, currency?: string) => {
+    if (amount === undefined || amount === null || Number.isNaN(Number(amount))) return '';
+    const curr = (currency || 'EUR').toUpperCase();
+    const val = Math.round(Number(amount));
+    if (curr === 'XOF') return `${val.toLocaleString('fr-FR')} FCFA`;
+    if (curr === 'BRL') return `R$ ${val.toLocaleString('fr-FR')}`;
+    return `${val.toLocaleString('fr-FR')} €`;
+  };
 
   // Scroll to top on mount
   useEffect(() => {
@@ -162,6 +190,7 @@ export const RegistrationPage: React.FC = () => {
             id: l.id,
             code: l.code,
             name: l.name,
+            offers: Array.isArray(l.offers) ? l.offers : [],
           }));
           setLevels(list);
           setDesiredLevel((prev) => {
@@ -222,6 +251,7 @@ export const RegistrationPage: React.FC = () => {
       if (selectedLevelObj?.id) formData.append('level_id', String(selectedLevelObj.id));
       formData.append('level_choice', desiredLevel);
       formData.append('study_mode', studyMode);
+      formData.append('rhythm', showScheduleSelector ? rhythm : 'day');
       formData.append('study_purpose', studyPurpose);
       if (!studyMode.includes('Ligne') && selectedCityObj?.id) {
         formData.append('brazil_city_id', String(selectedCityObj.id));
@@ -452,6 +482,63 @@ export const RegistrationPage: React.FC = () => {
                     </select>
                   </div>
                 </div>
+
+                {/* Créneau horaire & Tarification modulée (Cours du jour vs Cours du soir) */}
+                {showScheduleSelector && (
+                  <div className="glass-field-group">
+                    <label className="glass-label">
+                      {lang === 'en'
+                        ? 'Class Schedule & Modulated Pricing'
+                        : lang === 'pt'
+                        ? 'Horário das Aulas & Tarifa Modulada'
+                        : 'Créneau Horaire & Tarification Modulée'}
+                    </label>
+                    <div className="glass-rhythm-grid">
+                      <button
+                        type="button"
+                        className={`glass-rhythm-card ${rhythm === 'day' ? 'active' : ''}`}
+                        onClick={() => setRhythm('day')}
+                      >
+                        <div className="glass-rhythm-top">
+                          <span className="glass-rhythm-title">
+                            {lang === 'en' ? 'Daytime classes' : lang === 'pt' ? 'Aulas diurnas' : 'Cours du jour'}
+                          </span>
+                          {matchedOffer?.base_price ? (
+                            <span className="glass-rhythm-price">
+                              {formatOfferPrice(matchedOffer.base_price, matchedOffer.currency)}
+                            </span>
+                          ) : null}
+                        </div>
+                        <span className="glass-rhythm-hours">
+                          {matchedOffer?.day_schedule_label || '09h00 – 13h00'}
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        className={`glass-rhythm-card ${rhythm === 'evening' ? 'active' : ''}`}
+                        onClick={() => setRhythm('evening')}
+                      >
+                        <div className="glass-rhythm-top">
+                          <span className="glass-rhythm-title">
+                            {lang === 'en' ? 'Evening classes' : lang === 'pt' ? 'Aulas noturnas' : 'Cours du soir'}
+                          </span>
+                          {(matchedOffer?.evening_base_price || matchedOffer?.base_price) ? (
+                            <span className="glass-rhythm-price evening">
+                              {formatOfferPrice(
+                                matchedOffer?.evening_base_price ?? matchedOffer?.base_price,
+                                matchedOffer?.currency
+                              )}
+                            </span>
+                          ) : null}
+                        </div>
+                        <span className="glass-rhythm-hours">
+                          {matchedOffer?.evening_schedule_label || '18h30 – 21h30'}
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {/* Champ conditionnel : justificatif du niveau précédent pour tout niveau supérieur à A1 */}
                 {requiredPreviousLevel && (

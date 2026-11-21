@@ -5,9 +5,10 @@ import { useSiteSettings } from './SiteSettingsContext';
 
 interface NavbarProps {
   onOpenRegister: () => void;
+  forceSolid?: boolean;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister }) => {
+export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister, forceSolid = false }) => {
   const { lang, setLang, t } = useLanguage();
   const siteSettings = useSiteSettings();
   const [isScrolled, setIsScrolled] = useState(false);
@@ -50,7 +51,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister }) => {
 
   return (
     <>
-      <header className={`site-header ${isScrolled ? 'is-scrolled' : ''}`}>
+      <header className={`site-header ${forceSolid || isScrolled ? 'is-scrolled' : ''}`}>
         <div className="header-inner">
           {/* Logo dynamique configuré par l'admin */}
           <Link to="/" className="brand-logo" onClick={handleNavClick}>
@@ -71,8 +72,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister }) => {
 
           {/* Menu Desktop */}
           <div className="header-right header-desktop-nav">
-            <a href="#formations" className="header-link">{t.nav.programs}</a>
-            <a href="#partenaires" className="header-link">{t.nav.universities}</a>
+            <a href="/#formations" className="header-link">{t.nav.programs}</a>
+            <a href="/#schema" className="header-link">
+              {lang === 'en' ? 'Roadmap' : lang === 'pt' ? 'Esquema' : 'Schéma'}
+            </a>
+            <a href="/#partenaires" className="header-link">{t.nav.universities}</a>
             {!isLoggedIn && (
               <Link to="/connexion" className="header-link">{t.nav.login}</Link>
             )}
@@ -210,11 +214,15 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister }) => {
             </div>
 
             <nav className="mobile-drawer-links">
-              <a href="#formations" className="drawer-link-item" onClick={handleNavClick}>
+              <a href="/#formations" className="drawer-link-item" onClick={handleNavClick}>
                 <i className="fa-solid fa-graduation-cap"></i>
                 <span>{t.nav.drawerPrograms}</span>
               </a>
-              <a href="#timeline" className="drawer-link-item" onClick={handleNavClick}>
+              <a href="/#schema" className="drawer-link-item" onClick={handleNavClick}>
+                <i className="fa-solid fa-diagram-project"></i>
+                <span>{lang === 'en' ? 'Roadmap' : lang === 'pt' ? 'Esquema' : 'Schéma'}</span>
+              </a>
+              <a href="/#timeline" className="drawer-link-item" onClick={handleNavClick}>
                 <i className="fa-solid fa-route"></i>
                 <span>{t.nav.drawerTimeline}</span>
               </a>

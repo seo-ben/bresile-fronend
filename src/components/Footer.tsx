@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useLanguage } from '../i18n/LanguageContext';
 import { API_ENDPOINTS } from '../config/api';
 import { useSiteSettings } from './SiteSettingsContext';
@@ -319,8 +320,17 @@ export const Footer: React.FC<FooterProps> = ({ onOpenRegister }) => {
             </div>
 
             <div className="footer-col-nav reveal-right reveal-delay-1">
-              <h4 className="footer-column-heading">{t.footer.colAbout}</h4>
+              <h4 className="footer-column-heading">
+                <Link to="/a-propos" style={{ color: 'inherit', textDecoration: 'none' }}>
+                  {t.footer.colAbout}
+                </Link>
+              </h4>
               <ul className="footer-plain-nav-list">
+                <li>
+                  <Link to="/a-propos">
+                    {lang === 'en' ? 'About the Project' : lang === 'pt' ? 'Sobre o Projeto' : 'À Propos du Projet'}
+                  </Link>
+                </li>
                 {t.footer.aboutList.map((item, idx) => (
                   <li key={idx}><a href={item.href}>{item.label}</a></li>
                 ))}

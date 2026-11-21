@@ -13,6 +13,10 @@ export interface SiteSettings {
   contact_phone: string;
   contact_address: string;
   website_url: string;
+  cert_director_name?: string;
+  cert_director_title?: string;
+  cert_weekly_hours?: string;
+  cert_legal_footer?: string;
 }
 
 const DEFAULT_SETTINGS: SiteSettings = {
@@ -35,27 +39,40 @@ export const SiteSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [settings, setSettings] = useState<SiteSettings>(DEFAULT_SETTINGS);
 
   useEffect(() => {
-    fetch(`${API_ENDPOINTS.siteSettings}?lang=${lang}`, {
-      headers: { Accept: 'application/json' },
-    })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((payload) => {
-        if (payload?.data) {
-          setSettings({
-            ...DEFAULT_SETTINGS,
-            ...payload.data,
-          });
-        }
+    const fetchSettings = () => {
+      fetch(`${API_ENDPOINTS.siteSettings}?lang=${lang}&_t=${Date.now()}`, {
+        headers: { Accept: 'application/json' },
+        cache: 'no-store',
       })
-      .catch(() => {});
+        .then((res) => (res.ok ? res.json() : null))
+        .then((payload) => {
+          if (payload?.data) {
+            setSettings({
+              ...DEFAULT_SETTINGS,
+              ...payload.data,
+            });
+          }
+        })
+        .catch(() => {});
+    };
+
+    fetchSettings();
+    window.addEventListener('focus', fetchSettings);
+    return () => window.removeEventListener('focus', fetchSettings);
   }, [lang]);
 
-  // Synchroniser le titre de l'onglet du navigateur avec le nom du site configuré par l'admin
+  // Synchroniser le titre et le favicon de l'onglet du navigateur avec le nom et le logo configurés par l'admin
   useEffect(() => {
     if (settings.site_name) {
       document.title = `${settings.site_name} — ${settings.tagline || DEFAULT_SETTINGS.tagline}`;
     }
-  }, [settings.site_name, settings.tagline]);
+    if (settings.logo_url) {
+      const favicon = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+      if (favicon) {
+        favicon.href = settings.logo_url;
+      }
+    }
+  }, [settings.site_name, settings.tagline, settings.logo_url]);
 
   return (
     <SiteSettingsContext.Provider value={settings}>

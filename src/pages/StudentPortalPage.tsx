@@ -6,6 +6,7 @@ import { useLanguage, type Language } from '../i18n/LanguageContext';
 import { useToast } from '../components/ToastContext';
 import { useSiteSettings } from '../components/SiteSettingsContext';
 import { openOfficialReceipt } from '../utils/receiptGenerator';
+import { openSecureEnrollmentCertificate } from '../utils/certificateGenerator';
 
 type TabKey =
   | 'overview'
@@ -39,7 +40,14 @@ interface EnrollmentInfo {
   status: string;
   status_reason?: string;
   rhythm: string;
+  evening_enabled?: boolean;
+  day_schedule_label?: string | null;
+  evening_schedule_label?: string | null;
+  day_price?: number | null;
+  evening_price?: number | null;
   enrolled_at?: string;
+  certificate_code?: string | null;
+  certificate_issued_at?: string | null;
   installments?: Array<{
     id: number | null;
     installment_no: number;
@@ -136,7 +144,7 @@ const portalI18n: Record<Language, Record<string, string>> = {
     modeRemote: 'En ligne (Depuis votre pays)',
     modeBrazil: 'Présentiel au Brésil (Visa VITEM IV)',
     rhythmEvening: 'Cours du soir',
-    rhythmDay: 'Cours de jour (Matin / Après-midi)',
+    rhythmDay: 'Cours du jour',
     actionTitle: 'Prochaine action requise : Règlement de la 1ère tranche (Niveau A1)',
     actionDesc:
       "Votre dossier d'inscription a été vérifié par l'école. Réglez votre première tranche mensuelle (ou le montant comptant) pour générer votre attestation d'inscription officielle sous 48h ouvrées.",
@@ -309,7 +317,7 @@ const portalI18n: Record<Language, Record<string, string>> = {
     modeRemote: 'Online (From your home country)',
     modeBrazil: 'In-Person in Brazil (VITEM IV Visa)',
     rhythmEvening: 'Evening classes',
-    rhythmDay: 'Daytime classes (Morning / Afternoon)',
+    rhythmDay: 'Daytime classes',
     actionTitle: 'Next required action: Pay 1st installment (Level A1)',
     actionDesc:
       'Your enrollment file has been verified by the school. Pay your first monthly installment (or full tuition) to generate your official enrollment certificate within 48 business hours.',
@@ -482,7 +490,7 @@ const portalI18n: Record<Language, Record<string, string>> = {
     modeRemote: 'Online (A partir do seu país)',
     modeBrazil: 'Presencial no Brasil (Visto VITEM IV)',
     rhythmEvening: 'Aulas noturnas',
-    rhythmDay: 'Aulas diurnas (Manhã / Tarde)',
+    rhythmDay: 'Aulas diurnas',
     actionTitle: 'Próxima ação necessária: Pagamento da 1ª parcela (Nível A1)',
     actionDesc:
       'Seu processo de inscrição foi validado pela escola. Realize o pagamento da primeira parcela mensal (ou valor à vista) para emitir sua declaração oficial de matrícula.',
@@ -1029,6 +1037,30 @@ export const StudentPortalPage: React.FC = () => {
       : Math.max(0, totalPrice - totalPaid);
   const isFullyPaid = Boolean(latestEnrollment?.is_fully_paid) || (totalPaid > 0 && remainingAmount <= 0.5);
   const hasPaidAtLeastOne = totalPaid > 0 || inst1Status === 'paid' || latestEnrollment?.status === 'active';
+
+  const handleOpenSecureCertificate = () => {
+    if (!latestEnrollment?.certificate_code) return;
+    openSecureEnrollmentCertificate(
+      {
+        certificateCode: latestEnrollment.certificate_code,
+        issuedAt: latestEnrollment.certificate_issued_at || new Date().toLocaleDateString('fr-FR'),
+        studentName: fullName,
+        studentEmail: user?.email || '',
+        studentPhone: user?.profile?.phone || '—',
+        studentRef: candidateNumber,
+        birthDate: user?.profile?.birth_date || null,
+        levelName: formationTitle,
+        studyMode: studyModeLabel,
+        cityLabel:
+          latestEnrollment.study_mode === 'remote_home_country'
+            ? '100 % En Ligne'
+            : `${cityName} (${cityState}), Brésil`,
+        rhythmLabel,
+      },
+      siteSettings,
+      lang
+    );
+  };
 
   // Verrouiller le mode de règlement de scolarité dès que le 1er paiement de scolarité est effectué
   const confirmedPaymentsList = (latestEnrollment?.payments || []).filter((p) => p.purpose !== 'service_fee');
@@ -1617,8 +1649,32 @@ export const StudentPortalPage: React.FC = () => {
 
                       return (
                         <>
-                          {/* 1. Attestation d'Inscription */}
-                          {docAttestation?.file_url ? (
+                          {/* 1. Attestation d'Inscription sécurisée (QR Code automatique après paiement) */}
+                          {hasPaidAtLeastOne && latestEnrollment?.certificate_code ? (
+                            <button
+                              type="button"
+                              onClick={handleOpenSecureCertificate}
+                              className="portal-doc-entry"
+                              style={{ width: '100%', textAlign: 'left', background: '#ffffff', cursor: 'pointer' }}
+                            >
+                              <div className="portal-doc-info-block">
+                                <i className="fa-solid fa-qrcode portal-doc-icon-red" style={{ color: '#059669' }}></i>
+                                <div>
+                                  <div className="title">{pt.doc1Title}</div>
+                                  <div className="status">
+                                    {lang === 'en'
+                                      ? `Verified QR Code · Ref: ${latestEnrollment.certificate_code}`
+                                      : lang === 'pt'
+                                      ? `QR Code Verificado · Ref: ${latestEnrollment.certificate_code}`
+                                      : `Sécurisée par QR Code · Réf : ${latestEnrollment.certificate_code}`}
+                                  </div>
+                                </div>
+                              </div>
+                              <span className="portal-btn-download-pill">
+                                <i className="fa-solid fa-download"></i> {pt.download} (PDF)
+                              </span>
+                            </button>
+                          ) : docAttestation?.file_url ? (
                             <a
                               href={docAttestation.file_url}
                               target="_blank"
@@ -1658,6 +1714,28 @@ export const StudentPortalPage: React.FC = () => {
                                   : pt.doc1Badge}
                               </span>
                             </div>
+                          )}
+                          {hasPaidAtLeastOne && latestEnrollment?.certificate_code && docAttestation?.file_url && (
+                            <a
+                              href={docAttestation.file_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              download
+                              className="portal-doc-entry"
+                            >
+                              <div className="portal-doc-info-block">
+                                <i className="fa-solid fa-file-lines portal-doc-icon-red"></i>
+                                <div>
+                                  <div className="title">{docAttestation.title}</div>
+                                  <div className="status">
+                                    {docAttestation.issued_at ? `Délivrée le ${docAttestation.issued_at}` : pt.doc1Sub}
+                                  </div>
+                                </div>
+                              </div>
+                              <span className="portal-btn-download-pill">
+                                <i className="fa-solid fa-download"></i> {pt.download}
+                              </span>
+                            </a>
                           )}
 
                           {/* 2. Contrat & Garantie 85% */}
@@ -1903,8 +1981,20 @@ export const StudentPortalPage: React.FC = () => {
                         onChange={(e) => setEditRhythm(e.target.value as 'day' | 'evening')}
                         style={{ padding: '0.6rem 0.75rem', borderRadius: '10px', border: '1px solid #cbd5e1', background: '#fff', fontSize: '0.88rem' }}
                       >
-                        <option value="day">{pt.rhythmDay}</option>
-                        <option value="evening">{pt.rhythmEvening}</option>
+                        <option value="day">
+                          {pt.rhythmDay}
+                          {latestEnrollment?.day_schedule_label ? ` (${latestEnrollment.day_schedule_label})` : ''}
+                          {latestEnrollment?.evening_enabled && latestEnrollment?.day_price
+                            ? ` — ${formatMoney(Number(latestEnrollment.day_price))}`
+                            : ''}
+                        </option>
+                        <option value="evening">
+                          {pt.rhythmEvening}
+                          {latestEnrollment?.evening_schedule_label ? ` (${latestEnrollment.evening_schedule_label})` : ''}
+                          {latestEnrollment?.evening_enabled && latestEnrollment?.evening_price
+                            ? ` — ${formatMoney(Number(latestEnrollment.evening_price))}`
+                            : ''}
+                        </option>
                       </select>
                     </div>
                   </div>
@@ -2758,8 +2848,32 @@ export const StudentPortalPage: React.FC = () => {
 
                   return (
                     <>
-                      {/* 1. Attestation d'Inscription */}
-                      {docAttestation?.file_url ? (
+                      {/* 1. Attestation d'Inscription sécurisée (QR Code automatique après paiement) */}
+                      {hasPaidAtLeastOne && latestEnrollment?.certificate_code ? (
+                        <button
+                          type="button"
+                          onClick={handleOpenSecureCertificate}
+                          className="portal-doc-entry"
+                          style={{ width: '100%', textAlign: 'left', background: '#ffffff', cursor: 'pointer' }}
+                        >
+                          <div className="portal-doc-info-block">
+                            <i className="fa-solid fa-qrcode portal-doc-icon-red" style={{ color: '#059669' }}></i>
+                            <div>
+                              <div className="title">{pt.doc1Title}</div>
+                              <div className="status">
+                                {lang === 'en'
+                                  ? `Verified QR Code · Ref: ${latestEnrollment.certificate_code}`
+                                  : lang === 'pt'
+                                  ? `QR Code Verificado · Ref: ${latestEnrollment.certificate_code}`
+                                  : `Sécurisée par QR Code · Réf : ${latestEnrollment.certificate_code}`}
+                              </div>
+                            </div>
+                          </div>
+                          <span className="portal-btn-download-pill">
+                            <i className="fa-solid fa-download"></i> {pt.download} (PDF)
+                          </span>
+                        </button>
+                      ) : docAttestation?.file_url ? (
                         <a
                           href={docAttestation.file_url}
                           target="_blank"
@@ -2799,6 +2913,28 @@ export const StudentPortalPage: React.FC = () => {
                               : pt.doc1Badge}
                           </span>
                         </div>
+                      )}
+                      {hasPaidAtLeastOne && latestEnrollment?.certificate_code && docAttestation?.file_url && (
+                        <a
+                          href={docAttestation.file_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          download
+                          className="portal-doc-entry"
+                        >
+                          <div className="portal-doc-info-block">
+                            <i className="fa-solid fa-file-pdf portal-doc-icon-red"></i>
+                            <div>
+                              <div className="title">{docAttestation.title}</div>
+                              <div className="status">
+                                {docAttestation.issued_at ? `Délivrée le ${docAttestation.issued_at}` : pt.doc1Sub}
+                              </div>
+                            </div>
+                          </div>
+                          <span className="portal-btn-download-pill">
+                            <i className="fa-solid fa-download"></i> {pt.download}
+                          </span>
+                        </a>
                       )}
 
                       {/* 2. Contrat & Garantie 85% */}

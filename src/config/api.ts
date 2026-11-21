@@ -18,6 +18,7 @@ export const API_ENDPOINTS = {
   academicUniversities: `${API_BASE_URL}/api/v1/academic/universities`,
   academicLevels: `${API_BASE_URL}/api/v1/academic/levels`,
   academicCities: `${API_BASE_URL}/api/v1/academic/cities`,
+  enrollmentSteps: `${API_BASE_URL}/api/v1/academic/enrollment-steps`,
   register: `${API_BASE_URL}/api/v1/auth/register`,
   login: `${API_BASE_URL}/api/v1/auth/login`,
   me: `${API_BASE_URL}/api/v1/auth/me`,
@@ -27,4 +28,6 @@ export const API_ENDPOINTS = {
   whatsappLead: `${API_BASE_URL}/api/v1/leads/whatsapp`,
   siteSettings: `${API_BASE_URL}/api/v1/site/settings`,
   studentRequests: `${API_BASE_URL}/api/v1/student-requests`,
+  cmsContent: (key: string) => `${API_BASE_URL}/api/v1/academic/cms/${encodeURIComponent(key)}`,
+  verifyCertificate: (code: string) => `${API_BASE_URL}/api/v1/certificates/verify/${encodeURIComponent(code)}`,
 } as const;

@@ -3,7 +3,7 @@ import path from 'node:path'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
-const spaRoutes = ['portail', 'inscription', 'connexion', 'espace-etudiant']
+const spaRoutes = ['portail', 'inscription', 'connexion', 'espace-etudiant', 'a-propos', 'verifier-attestation']
 
 export default defineConfig({
   plugins: [
